@@ -1,0 +1,11 @@
+---
+sshd_bk_match1Line: Match User {{ bk_user }}
+sshd_bk: |
+  Match User {{ bk_user }}
+      X11Forwarding no
+      AllowTcpForwarding no
+      AllowAgentForwarding no
+      ChrootDirectory {{ bk_sftp_dir }}
+      ForceCommand internal-sftp -u 0007
+      PermitTunnel no
+sftp_users_group: sftpOnly

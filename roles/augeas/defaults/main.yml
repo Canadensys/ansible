@@ -1,0 +1,9 @@
+---
+# Augeas installed packages
+augeas_pkgs:
+    - libaugeas0
+    - augeas-lenses
+    - augeas-tools
+    - python-augeas
+    - python-libxml2
+    - libpython2.7

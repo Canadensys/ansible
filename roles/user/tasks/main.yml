@@ -1,0 +1,42 @@
+---
+- name : create group user
+  become: true
+  group:
+    name: '{{ user_group }}'
+    
+- name: Add default user
+  become: true
+  user:
+    name    : '{{ user_name }}'
+    group   : '{{ user_group }}'
+    shell   : '/bin/false'
+    state   : present
+
+- name: Set user home if defined
+  become: true
+  user:
+    name    : '{{ user_name }}'
+    home    : '{{ user_home }}'
+  when: (user_home is defined)
+
+- name: Set user password if defined
+  become: true
+  user:
+    name    : '{{ user_name }}'
+    password: '{{ user_password }}'
+  when: (user_password is defined)
+
+- name: Add .ssh directory for user with home
+  become: true
+  file:
+    path    : '{{ item }}'
+    state   : directory
+    owner   : '{{ user_name }}'
+    group   : '{{ user_group }}'
+  with_items:
+    - '{{ user_home }}/.ssh/'
+    - '{{ user_web }}'
+
+#- name: Add public key for user
+#  command: echo '{{ user_pub_key }}' | tee ~/.ssh/authorized_keys
+#  when: (user_pub_key is defined)

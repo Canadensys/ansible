@@ -1,0 +1,16 @@
+---
+# Mysql installed packages
+mysql_pkgs:
+  - aptitude
+  - mysql-server
+  - mysql-client
+  - python-mysqldb
+  - python-selinux
+  - python-semanage
+  - python-pycurl
+
+# MySQL port
+# You shouldn't need to change this.
+mysql_port: 3306
+mysql_root_password: password
+vm_hostname: localhost

@@ -1,0 +1,8 @@
+---
+# Mediawiki packages
+mediawiki_pkgs:
+  - libpcre3
+  - libpcre3-dev
+  - imagemagick
+  - texlive
+  

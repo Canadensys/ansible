@@ -1,0 +1,53 @@
+---
+- name: Install Fail2ban packages
+  become: true
+  apt:
+    pkg             : '{{ item }}'
+    state           : present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  with_items: '{{ fail2ban_pkgs }}'
+  notify:
+    - restart fail2ban
+
+- name: Ensure fail2ban is configured
+  become: true
+  template:
+    src: "{{ item }}.j2"
+    dest: /etc/fail2ban/{{ item }}
+  with_items:
+    - jail.local
+    - fail2ban.local
+  notify:
+    - restart fail2ban
+
+- name: Add actions for fail2ban
+  become: true
+  template:
+    src: "{{ item }}.j2"
+    dest: /etc/fail2ban/action.d/{{ item }}
+  with_items:
+    - ufw-ssh.conf
+  notify:
+    - restart fail2ban
+
+- name: Add filters for fail2ban
+  become: true
+  template:
+    src: "{{ item }}.j2"
+    dest: /etc/fail2ban/filter.d/{{ item }}
+  with_items:
+    - nginx-http-auth2.conf
+    - nginx-nohome.conf
+    - nginx-noproxy.conf
+    - nginx-noscript.conf
+    - nginx-badbots.conf
+  notify:
+    - restart fail2ban
+
+- name: Ensure fail2ban starts on a fresh reboot
+  become: true
+  service:
+    name    : '{{ fail2ban }}'
+    state   : started
+    enabled : yes

@@ -1,0 +1,8 @@
+dependencies:
+  - { role: wordpress_user_setting }
+#  - { role: common }
+#  - { role: user }
+#  - { role: mysql }
+#  - { role: nginx }
+#  - { role: php_fpm }
+#  - { role: backup }

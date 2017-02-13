@@ -1,0 +1,33 @@
+---
+- name: Update apt cache
+  become: true
+  apt:
+    update_cache: yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  register: update_action
+ 
+- name: Upgrade APT to the latest packages
+  become: true
+  apt:
+    upgrade: safe
+  when: update_action.changed
+
+- name: Install Common packages ubuntu 16.04
+  become: true
+  apt:
+    pkg: '{{ item }}'
+    state: present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  with_items: '{{ commom_pkgs_1604 }}'
+  when: ansible_distribution_version == "16.04"
+
+- name: Install Common packages ubuntu 14.04
+  become: true
+  apt:
+    pkg: '{{ item }}'
+    state: present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  with_items: '{{ commom_pkgs_1404 }}'
+  when: ansible_distribution_version == "14.04"

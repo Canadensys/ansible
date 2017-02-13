@@ -1,0 +1,50 @@
+---
+# Common packages
+commom_pkgs_1604:
+  - aptitude
+  - software-properties-common
+  - gzip
+  # SSL
+  - openssl
+  - libcurl3
+  - libmcrypt4
+  - libmhash2
+  - libssl-dev
+  # Mem
+  - libxmlrpc-epi0
+  - memcached
+  - mcrypt
+  - psmisc
+  # C/C++ mem cache
+  - libmemcached11
+  - python-software-properties
+  # Security-Enhanced Linux
+  - apparmor
+  - apparmor-profiles
+  - python-selinux
+  - unattended-upgrades
+
+commom_pkgs_1404:
+  - aptitude
+  - software-properties-common
+  - gzip
+  # SSL
+  - openssl
+  - libcurl3
+  - libmcrypt4
+  - libmhash2
+  - libssl-dev
+  # Mem
+  - libxmlrpc-epi0
+  - memcached
+  - mcrypt
+  - psmisc
+  # C/C++ mem cache
+  - libmemcached10
+  - python-software-properties
+  # Security-Enhanced Linux
+  - apparmor
+  - apparmor-profiles
+  - python-selinux
+  - unattended-upgrades
+

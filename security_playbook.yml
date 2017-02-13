@@ -1,0 +1,12 @@
+---
+- name: Install security server
+  hosts: all
+  become: True
+  roles:
+    - update
+    - common
+    - firewall
+    - nginx
+    - fail2ban
+    - log_watcher
+    - ssh

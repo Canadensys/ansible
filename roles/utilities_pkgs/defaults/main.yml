@@ -1,0 +1,9 @@
+---
+# Utilities packages
+utilities_pkgs:
+  - aptitude
+  - software-properties-common
+  - unzip
+  - ant
+  - vim
+

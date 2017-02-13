@@ -1,0 +1,10 @@
+---
+# Dropbox packages
+dropbox_pkgs:
+  - nautilus-dropbox
+
+ufw_dropbox_ports:
+  - 17600
+  - 17603
+  - 17500
+

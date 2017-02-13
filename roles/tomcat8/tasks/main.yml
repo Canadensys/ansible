@@ -1,0 +1,57 @@
+---
+- name: Install tomcat8 packages
+  become: true
+  apt:
+    pkg             : '{{ item }}'
+    state           : present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  with_items: '{{ tomcat8_pkgs }}'
+
+- name: Enable the AJP 1.3 connector
+  become: true
+  tomcat8_connector: name="AJP/1.3"
+  notify:
+    - restart tomcat8
+
+- name: configure tomcat8 memory
+  become: true
+  lineinfile: 
+    dest={{ tomcat8_conf }}
+    regexp="^JAVA_OPTS"
+    line='JAVA_OPTS="{{ tomcat8_java_opts }}"'
+  notify: 
+    - restart tomcat8
+
+- name: Set JAVA_HOME
+  become: true
+  lineinfile: 
+    dest={{ tomcat8_conf }}
+    regexp="JAVA_HOME"
+    line='JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64'
+  notify: 
+    - restart tomcat8
+
+- name: Change the default tomcat8 web page directory
+  become: true
+  lineinfile: 
+    dest={{ tomcat8_conf_server }}
+    regexp='<Host name="localhost"  appBase="webapps"$'
+    line='     <Host name="localhost"  appBase="{{ tomcat8_webapps }}"'
+  notify: 
+    - restart tomcat8
+
+- name: ufw - Allow tomcat8 traffic
+  become: true
+  ufw:
+    rule    : allow
+    port    : '{{ item }}'
+    proto   : tcp
+  with_items: "{{ ufw_tomcat8_ports }}"
+
+- name: Ensure tomcat8 starts on a fresh reboot
+  become: true
+  service:
+    name    : '{{ tomcat8 }}'
+    state   : started
+    enabled : yes

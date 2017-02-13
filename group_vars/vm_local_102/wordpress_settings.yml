@@ -1,0 +1,74 @@
+---
+# wp user
+wp_user_name   : wp_user
+wp_user_group  : '{{ listen_group }}'
+wp_user_home   : '/home/{{ wp_user_name }}'
+wp_user_web    : '{{ wp_user_home }}/websites'
+wp_user_password : password
+wp_user_ssh_dir : '{{ wp_user_home }}/.ssh'
+wp_user_pub_key : ssh-rsa [public key]
+wp_user_pub_key_file : 'wp_user.rsa.pub'
+# Wordpress
+wp_name     : 'user_wp_website'
+wp_dir      : 'html/'
+# wp_dest    : '{{ web_dir }}/'
+wp_home     : '{{ web_dir }}/{{ wp_name }}'
+wp_final    : '{{ wp_home }}/{{ wp_dir }}'
+# Files
+wp_src      : '../files/{{ wp_name }}.tar.gz'
+wp_zip      : '{{ tmp_dest }}/{{ wp_name }}.tar.gz'
+# Database
+wp_db_src     : '../files/canadensys_wordpress.sql.gz'
+wp_db_zip     : '{{ tmp_dest }}/canadensys_wordpress.sql.gz'
+# WordPress database settings
+wp_db_name    : wp_db
+wp_db_user    : wp_db_user
+wp_db_password: password
+wp_db_host    : localhost
+# PHP server configuration
+wp_php_conf_file_source: 'wordpress_php.conf.j2'
+wp_php_conf_file_dest  : '{{ wp_name }}.conf'
+wp_php_listen: '/run/php/wp_local.sock'
+wp_php_listen_owner: 'www-data'
+wp_php_listen_group: 'www-data'
+# Nginx server configuration
+wp_server_hostname: local_vm
+wp_server_name: 'wp.helloworld.com'
+wp_nginx_src: 'wordpress_nginx.j2'
+wp_nginx_dest: 'wp-local'
+wp_available: '{{ nginx_available }}/{{ wp_nginx_dest }}'
+wp_enabled  : '{{ nginx_enabled   }}/{{ wp_nginx_dest }}'
+# WordPress Config File
+wp_config_file: 'wordpress_config.php.j2'
+
+# Disable All Updates
+# By default automatic updates are enabled, set this value to true to disable all automatic updates
+wp_auto_up_disable: false
+
+#Define Core Update Level
+#true  = Development, minor, and major updates are all enabled
+#false = Development, minor, and major updates are all disabled
+#minor = Minor updates are enabled, development, and major updates are disabled
+wp_core_update_level: true
+
+# Backup variables
+wp_backup_dict:
+  vm_local_102:
+    name    : 'vm_local_102'
+    server  : 'vm_local_102'
+    serverIP: '198.168.56.102'
+    script  : '{{ wp_backup_dest }}'
+    dp_dir  : 'vm_local_102/'
+    user    : '{{ bk_user }}'
+    cron_name: "Backup {{ wp_user_name }} Wordpress (daily schedule)"
+    cron_file: "{{ wp_user_name }}-DailyBackups"
+    cron_day: "1-31"
+    cron_hour: "1"
+    cron_min: "10"
+
+# Backup
+wp_logname      : 'wp_logs'
+wp_logfile      : '{{ bk_log_dir }}/{{ wp_logname }}'
+wp_backup_src   : 'backup.py.j2'
+wp_backup_dest  : 'wp_backup.py'
+wp_cron         : '{{ bk_cron_dir }}/{{ wp_backup_dest }}'

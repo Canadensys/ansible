@@ -1,0 +1,6 @@
+---
+# Oracle Java packages
+oracle_java_pkgs:
+  - software-properties-common
+  - python-software-properties
+  - oracle-java7-installer

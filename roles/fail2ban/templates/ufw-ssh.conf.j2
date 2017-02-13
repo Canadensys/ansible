@@ -1,0 +1,7 @@
+[Definition]
+# source: https://dodwell.us/security/ufw-fail2ban-portscan.html
+actionstart =
+actionstop  =
+actioncheck =
+actionban   = ufw deny in from <ip> to any app OpenSSH
+actionunban = ufw delete deny in from <ip> to any app OpenSSH

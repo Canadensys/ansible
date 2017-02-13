@@ -1,0 +1,37 @@
+# tomcat7 main variables
+tomcat7:             tomcat7
+tomcat7_user:        tomcat7
+tomcat7_conf:        /etc/default/{{ tomcat7 }}
+tomcat7_conf_dir:    /etc/{{ tomcat7 }}
+tomcat7_conf_server: '{{ tomcat7_conf_dir }}/server.xml'
+tomcat7_log_dir:     /var/log/{{ tomcat7 }}
+tomcat7_dir:         /var/lib/{{ tomcat7 }}
+#tomcat7_webapps:     /var/lib/webapps/
+
+tomcat7_host_name:   tomcat7_host_name
+tomcat7_maindir:     '/var/www/{{ tomcat7_host_name }}'
+tomcat7_webapps:     '{{ tomcat7_maindir }}/webapps'
+
+
+# tomcat7 specific variables
+packaging: "war"
+ufw_tomcat7_ports:
+  - 8080
+  
+tomcat7_pkgs:
+    - libtcnative-1
+    - '{{ tomcat7 }}'
+
+# Common tomcat7 variables across all roles
+# replace option: -Djava.awt.headless=true -Xmx128m -XX:+UseConcMarkSweepGC
+tomcat7_java_opts: -Xmx2g -Xms2g -XX:MaxPermSize=256m -Xss256k -Djava.awt.headless=true
+tomcat7_control_port: 8005
+tomcat7_http: true
+tomcat7_http_port: 8080
+tomcat7_ajp: false
+tomcat7_ajp_port: 8009
+tomcat7_apr: true
+tomcat7_users: true
+tomcat7_autoDeploy: true
+tomcat7_bind_addr: 0.0.0.0
+

@@ -1,0 +1,49 @@
+---
+- name: Ensures directories (ssh, bk, log, cron file) exist
+  file:
+    path    : '{{ item }}'
+    state   : directory
+    mode    : 0754
+    owner   : '{{ bk_vm_user }}'
+    group   : '{{ bk_vm_group }}'
+  with_items:
+    - '{{ bk_vm_log_dir }}'
+    - '{{ bk_vm_cron_dir }}'
+    - '{{ bk_vm_home }}'
+    - '{{ bk_vm_bk_dir }}'
+
+#
+# Add pivate key
+#
+- name: Copy private key certificate into place
+  copy:
+    content : '{{ bk_vm_priv_key_content }}'
+    dest    : '{{ bk_vm_priv_key_file }}'
+    owner   : '{{ bk_vm_user }}'
+    group   : '{{ bk_vm_group }}'
+    mode    : 0600
+
+#
+# Upload script and set cron
+#
+- name: Ensures local backup dir exists
+  file:
+    path    : '{{ bk_vm_bk_dir }}/{{ item.value.name }}'
+    state   : directory
+  with_dict: '{{ bk_vm_dict }}'
+  
+- name: Install scripts for backup
+  template:
+    src     : 'source_scp_script.py.j2'
+    dest    : '{{ bk_vm_cron_dir }}/{{ item.value.scp }}.py'
+    mode    : 0754
+  with_dict : '{{ bk_vm_dict }}'
+
+- name: Creates daily backup cronjob
+  become: true
+  cron: minute="{{ bk_vm_cron_min }}" hour="{{ bk_vm_cron_hour }}"
+        name="Backup {{ item.value.name }} (daily schedule)"
+        cron_file="{{ item.value.name }}-DailyBackups"
+        user="{{ bk_vm_user }}"
+        job='{{ bk_vm_cron_dir }}/{{ item.value.scp }}.py'
+  with_dict: '{{ bk_vm_dict }}'

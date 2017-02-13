@@ -1,0 +1,98 @@
+---
+- name: Install Postfix mail packages
+  become: true
+  apt:
+    pkg             : '{{ item }}'
+    state           : present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  with_items: '{{ postfix_pkgs }}'
+
+- name: Set up Postfix to relay mail
+  become: true
+  debconf: name=postfix
+           question='{{ item.question }}'
+           value='{{ item.value }}'
+           vtype='{{ item.vtype }}'
+  with_items:
+      #- { question: 'postfix/mailname', value: '{{ mail_name }}', vtype: 'string' }
+      - { question: 'postfix/mailname', value: '{{ ansible_fqdn }}', vtype: 'string' }
+      - { question: 'postfix/main_mailer_type', value: '{{ postfix_mailer_type }}', vtype: 'string' }
+
+#add a postfix generic since our vm has no external hostname
+#http://www.postfix.org/STANDARD_CONFIGURATION_README.html#fantasy
+- name: Set up Postfix 
+  become: true
+  template:
+    src     : 'generic.j2'
+    dest    : '/etc/postfix/generic'
+    mode    : 644
+    owner   : 'root'
+    group   : 'root'
+
+- name: Set up Postfix config (smtp_generic_maps)
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/postfix/main.cf
+    line    : "smtp_generic_maps = hash:/etc/postfix/generic"
+    regexp  : "^smtp_generic_maps = .*$"
+  notify: restart postfix
+
+- name: Set up Postfix config (relayhost)
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/postfix/main.cf
+    line    : "relayhost = smtp.umontreal.ca"
+    regexp  : "^relayhost = .*$"
+  notify: restart postfix
+
+- name: Set up Postfix config (mydomain)
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/postfix/main.cf
+    line    : "mydomain = localdomain"
+    regexp  : "^mydomain = .*$"
+  notify: restart postfix
+
+- name: Set up Postfix config (myhostname)
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/postfix/main.cf
+    line    : "myhostname = localhost.localdomain"
+    regexp  : "^myhostname = .*$"
+  notify: restart postfix
+
+- name: Set up Postfix config (myorigin)
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/postfix/main.cf
+    line    : "myorigin = $myhostname"
+    regexp  : "^myorigin = .*$"
+  notify: restart postfix
+
+- name: Set up Postfix config (myorigin)
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/postfix/main.cf
+    line    : "inet_interfaces = loopback-only"
+    regexp  : "^inet_interfaces = .*$"
+  notify: restart postfix
+
+- name: Postmap Generic
+  become: true
+  shell: postmap '/etc/postfix/generic'
+  notify: restart postfix
+
+- name: Ensure Postfix starts on a fresh reboot
+  become: true
+  service:
+    name    : '{{ postfix }}'
+    state   : started
+    enabled : yes
+

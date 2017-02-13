@@ -1,0 +1,35 @@
+---
+- name: debconf (Debian)
+  become: true
+  shell: echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections
+  tags:
+    - java
+
+- name: debconf2 (Debian)
+  become: true
+  shell: echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections
+  tags:
+    - java
+
+- name: apt-add-repository (Debian)
+  become: true
+  apt_repository:
+    repo: 'ppa:webupd8team/java'
+  tags:
+    - java
+
+- name: Install oracle java package
+  become: true
+  apt:
+    pkg             : '{{ item }}'
+    state           : present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  with_items: '{{ oracle_java_pkgs }}'
+
+- name: set oracle 7 java  (Debian)
+  become: true
+  apt:
+    pkg: 'oracle-java7-set-default'
+  tags:
+    - java

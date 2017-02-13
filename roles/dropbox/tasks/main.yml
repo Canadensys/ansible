@@ -1,0 +1,44 @@
+---
+- name: Install dropbox nautilus
+  become: true
+  apt:
+    pkg             : '{{ item }}'
+    state           : present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  with_items: '{{ dropbox_pkgs }}'
+
+- name: ufw - Allow dropbox traffic
+  become: true
+  ufw:
+    rule    : allow
+    port    : '{{ item }}'
+    proto   : tcp
+  with_items: "{{ ufw_dropbox_ports }}"
+  notify:
+    - restart ufw
+
+- name: Test if dropbox is running
+  command: dropbox status
+  register: dropbox_status
+
+- name: Start dropbox deamon
+  command: dropbox start -i
+  when: dropbox_status.stdout | search("Dropbox isn't running!")
+
+- name: Stop dropbox deamon
+  command: dropbox stop
+
+#
+# Launch dropbox by hand ...
+# didn't find a way to do it by ansible
+#
+- name: Then ...
+  shell: echo '- Connect to backup wm.\n- Run .dropbox-dist/dropboxd\n- Ctrl on the link\n- Connect the machine to the account\n- Exclude needed repository\n'
+  register: myecho
+  when: dropbox_status.stdout | search("Dropbox isn't running!")
+
+- name: Do this ...
+  debug: msg="{{myecho.stdout.split('\n')}}"
+  when: dropbox_status.stdout | search("Dropbox isn't running!")
+

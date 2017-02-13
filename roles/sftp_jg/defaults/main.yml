@@ -1,0 +1,11 @@
+---
+sshd_match1Line: Match User {{ user_name }}
+sshd_match: |
+  Match User {{ user_name }}
+      X11Forwarding no
+      AllowTcpForwarding no
+      AllowAgentForwarding no
+      ChrootDirectory {{ user_web }}
+      ForceCommand internal-sftp -u 0007
+      PermitTunnel no
+sftp_users_group: sftpOnly

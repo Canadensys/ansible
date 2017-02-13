@@ -1,0 +1,7 @@
+---
+# Logwatch packages
+logwatch_pkgs:
+  - logwatch
+
+# Logwatch variables
+logwatch_email      : 'canadensys.network@gmail.com'

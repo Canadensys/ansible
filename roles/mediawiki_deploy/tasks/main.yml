@@ -1,0 +1,174 @@
+---
+# Database
+- name: Upload db archive
+  become: true
+  copy:
+    src     : '{{ wiki_db_src }}'
+    dest    : '{{ wiki_db_zip }}'
+
+- name: Extract Wiki DB archive
+  become: true
+  unarchive:
+    src : '{{ wiki_db_zip }}'
+    dest: '{{ tmp_dest }}'
+    remote_src: yes
+    #copy: no
+
+- name: Ensure database is created
+  become: true
+  become_user: postgres
+  postgresql_db:
+    name={{ wiki_db_name }}
+    encoding='UTF-8'
+    lc_collate='en_US.UTF-8'
+    lc_ctype='en_US.UTF-8'
+    template='template0'
+    state=present
+  notify: restart postgresql
+
+- name: Ensure user has access to the database
+  become: true
+  become_user: postgres
+  postgresql_user:
+    db={{ wiki_db_name }}
+    name={{ wiki_db_user }}
+    password={{ wiki_db_password }}
+    priv=ALL
+    state=present
+  notify: restart postgresql
+
+- name: Ensure user does not have unnecessary privileges
+  become: true
+  become_user: postgres
+  postgresql_user:
+    name={{ wiki_db_user }}
+    role_attr_flags=NOSUPERUSER,NOCREATEDB
+    state=present
+  notify: restart postgresql
+
+- name: ensure no other user can access the database
+  become: true
+  become_user: postgres
+  postgresql_privs:
+    db={{ wiki_db_name }}
+    role=PUBLIC
+    type=database
+    priv=ALL
+    state=absent
+  notify: restart postgresql
+
+- name: Restore database
+  become: true
+  become_user: postgres
+  shell: PGPASSWORD={{ wiki_db_password }} psql {{ wiki_db_name }} -U {{ wiki_db_user }} -h {{ wiki_db_host }} < {{ wiki_db_unzip }}
+  notify: restart postgresql
+# Files
+- name: Ensures website dir exists
+  become: true
+  file:
+    path    : '{{ wiki_final }}'
+    owner   : '{{ wiki_user_name }}'
+    group   : '{{ wiki_user_group }}'
+    state   : directory
+  
+- name: Test if $user is here
+  become: true
+  user:
+    name    : '{{ wiki_user_name }}'
+    state   : present
+  register: wiki_user_here
+  
+- name: Upload file archive
+  become: true
+  copy:
+    src     : '{{ wiki_src }}'
+    dest    : '{{ wiki_zip }}'
+
+- name: Ensures website dir exists
+  become: true
+  file:
+    path    : '{{ web_dir }}'
+    state   : directory
+  
+- name: Extract Wiki archive
+  become: true
+  unarchive:
+    src : '{{ wiki_zip }}'
+    dest: '{{ wiki_final }}'
+    remote_src: yes
+    #copy: no
+
+- name: Wiki config file
+  become: true
+  template:
+    src     : '{{ wiki_config_file }}'
+    dest    : '{{ wiki_final }}/LocalSettings.php'
+    force   : true
+
+- name: Change ownership of Mediawiki installation
+  become: true
+  file:
+    path    : '{{ wiki_home }}'
+    owner   : '{{ wiki_user_name }}'
+    group   : '{{ wiki_user_group }}'
+    state   : directory
+    mode    : u+rwx,g+rws,o-rwx
+    recurse : yes
+# Mount in user home
+- name: Mount server in home user
+  become: true
+  mount:
+    name    : '{{ wiki_user_web }}/{{ wiki_name }}'
+    src     : '{{ wiki_home }}'
+    fstype  : auto
+    opts    : bind
+    passno  : 2
+    state   : mounted
+# Nginx
+- name: Nginx Copy configuration
+  become: true
+  template:
+    src : '{{ wiki_nginx_src }}'
+    dest: '{{ wiki_available }}'
+  notify: restart nginx
+
+- name: Nginx Create symlink to enabled website
+  become: true
+  file:
+    src  : '{{ wiki_available }}'
+    dest : '{{ wiki_enabled }}'
+    state: link
+  notify: restart nginx
+# PHP
+- name: Php-fpm copy configuration
+  become: true
+  template:
+    src : '{{ wiki_php_conf_file_source }}'
+    dest: '{{ php_pool_dir }}/{{ wiki_php_conf_file_dest }}'
+  notify: restart php-fpm
+# Backup
+- name: Copy backup script in crondir and executable
+  become: true
+  template:
+    src:    '{{ wiki_backup_src }}'
+    dest:   '{{ wiki_cron }}'
+    mode:   0754
+    owner   : '{{ bk_user }}'
+    group   : '{{ bk_group }}'
+
+- name: Creates weekly backup cronjob
+  become: true
+  cron: minute={{ item.value.cron_min }} hour={{ item.value.cron_hour }} day={{ item.value.cron_day }}
+        name={{ item.value.cron_name }}
+        cron_file={{ item.value.cron_file }}
+        user={{ item.value.user }}
+        job={{ wiki_cron }}
+  with_dict: "{{ wiki_backup_dict }}"
+
+- name: Restart programs
+  become: true
+  service: name='{{ item }}' state=restarted
+  with_items:
+    - '{{ php }}'
+    - '{{ nginx }}'
+    - '{{ postgresql }}'

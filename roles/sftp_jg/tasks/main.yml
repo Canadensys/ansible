@@ -1,0 +1,115 @@
+---
+- name: Registering nologin shell
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/shells
+    line    : "/usr/sbin/nologin"
+    regexp  : "^/usr/sbin/nologin"
+    insertafter: EOF
+
+- name: Comment actual configuration for sftp and sshd subsystem
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/ssh/sshd_config
+    line    : '#Subsystem sftp /usr/lib/openssh/sftp-server'
+    regexp  : 'Subsystem sftp /usr/lib/openssh/sftp-server$'
+  notify: restart ssh
+  register: checksshconf
+
+- name: Configuring sshd subsystem PART1
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/ssh/sshd_config
+    line    : "Subsystem sftp internal-sftp"
+    insertafter: '^#Subsystem sftp /usr/lib/openssh/sftp-server$'
+  notify: restart ssh
+  when: checksshconf.changed
+
+- name: Configuring sshd subsystem PART2
+  become: true
+  replace:
+    dest    : /etc/ssh/sshd_config
+    replace : '{{ sshd_match1Line }} '
+    regexp  : '{{ sshd_match1Line }}$'
+    backup  : yes
+  register  : checksshconf2
+  notify: restart ssh
+
+- name: Configuring sshd subsystem PART3
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/ssh/sshd_config
+    line    : '{{ sshd_match }}'
+    insertafter: 'UsePAM yes'
+    regexp  : '{{ sshd_match }}'
+  notify: restart ssh
+  when: checksshconf2.changed == false
+
+- name: Configuring sshd subsystem PART4
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/ssh/sshd_config
+    line    : '{{ sshd_match1Line }}'
+    regexp  : '{{ sshd_match1Line }} $'
+  notify: restart ssh
+  when: checksshconf2.changed
+
+- name: Adding group
+  become: true
+  group:
+    name    : '{{ sftp_users_group }}'
+    state   : present
+  when: sftp_users_group is defined
+
+- name: Test if $user is here
+  become: true
+  user:
+    name    : '{{ user_name }}'
+    state   : present
+  register: user_here
+  
+- name: Add user to sftp group
+  become: true
+  user:
+    name    : '{{ user_name }}'
+    group   : '{{ sftp_users_group }}'
+  when: ('present' in '{{ user_here.state }}')
+
+- name: Add file authorized keys
+  file:
+    path    : '{{user_home}}/.ssh/authorized_keys'
+    owner   : 'root'
+    group   : 'root'
+    mode    : 0755
+    state   : touch
+  become: true
+
+- name: Add key
+  become: true
+  lineinfile:
+    state   : present
+    dest    : "{{user_home}}/.ssh/authorized_keys"
+    line    : '{{ user_pub_key }}'
+    insertafter: EOF
+  notify: restart ssh
+
+- name: Change ownership of sftp user home
+  become: true
+  file:
+    path    : '{{ item }}'
+    owner   : 'root'
+    group   : 'root'
+    mode    : 0755
+  with_items:
+    - '{{user_home}}'
+    - '{{user_home}}/.bash_logout'
+    - '{{user_home}}/.bashrc'
+    - '{{user_home}}/.profile'
+    - '{{user_home}}/.ssh/'
+    - '{{user_home}}/websites/'
+  notify: restart ssh

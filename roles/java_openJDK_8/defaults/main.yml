@@ -1,0 +1,8 @@
+---
+# Open JDK Java packages
+openjdk_java_pkgs:
+    - software-properties-common
+    - python-software-properties
+    - openjdk-8-jre
+    - openjdk-8-jdk
+

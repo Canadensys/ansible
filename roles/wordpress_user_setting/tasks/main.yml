@@ -1,0 +1,10 @@
+---
+- name: Set parameters
+  set_fact:
+    user_name   : '{{ wp_user_name }}'
+    user_group  : '{{ wp_user_group }}'
+    user_home   : '{{ wp_user_home }}'
+    user_web    : '{{ wp_user_web }}'
+    user_pub_key: '{{ wp_user_pub_key }}'
+    user_password: '{{ wp_user_password }}'
+  

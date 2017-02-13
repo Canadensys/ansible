@@ -1,0 +1,24 @@
+---
+- name: restart nginx
+  become: true
+  service:
+    name: '{{ nginx }}'
+    state: restarted
+
+- name: restart php-fpm
+  become: true
+  service:
+    name: '{{ php7.0-fpm }}'
+    state: restarted
+
+- name: restart mysql
+  become: true
+  service:
+    name: '{{ mysql }}'
+    state: restarted
+
+- name: restart postgresql
+  become: true
+  service:
+    name: '{{ postgresql }}'
+    state: restarted

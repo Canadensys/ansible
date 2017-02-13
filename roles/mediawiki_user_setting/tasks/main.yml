@@ -1,0 +1,10 @@
+---
+- name: Set parameters
+  set_fact:
+    user_name   : '{{ wiki_user_name }}'
+    user_group  : '{{ wiki_user_group }}'
+    user_home   : '{{ wiki_user_home }}'
+    user_web    : '{{ wiki_user_web }}'
+    user_pub_key: '{{ wiki_user_pub_key }}'
+    user_password: '{{ wiki_user_password }}'
+  

@@ -1,0 +1,133 @@
+---
+- name : create group user
+  become: true
+  group:
+    name: '{{ bk_group }}'
+    
+- name: Add default user
+  become: true
+  user:
+    name    : '{{ bk_user }}'
+    group   : '{{ bk_group }}'
+    home    : '{{ bk_home }}'
+    password: '{{ bk_password }}'
+    state   : present
+
+- name: Add Other groups user
+  become: true
+  user:
+    name    : '{{ bk_user }}'
+    groups  : '{{ item }}'
+    append  : yes
+  with_items:
+    - '{{ sftp_users_group }}'
+    - '{{ listen_group }}'
+
+- name: Ensures directories (bk, log, cron file) exist
+  become: true
+  file:
+    path    : '{{ item }}'
+    state   : directory
+    owner   : '{{ bk_user }}'
+    group   : '{{ bk_group }}'
+  with_items:
+    - '{{ bk_sftp_dir }}'
+    - '{{ bk_bk_dir }}'
+    - '{{ bk_log_dir }}'
+    - '{{ bk_cron_dir }}'
+    - '{{ bk_ssh_dir }}'
+
+- name: Add file authorized keys
+  become: true
+  file:
+    path    : '{{ bk_home }}/.ssh/authorized_keys'
+    owner   : 'root'
+    group   : 'root'
+    mode    : 0755
+    state   : touch
+
+- name: Add key
+  become: true
+  lineinfile:
+    state   : present
+    dest    : "{{ bk_home }}/.ssh/authorized_keys"
+    line    : '{{ bk_rsa_pub }}'
+    insertafter: EOF
+  notify: restart ssh
+
+- name: Change ownership of sftp user home
+  become: true
+  file:
+    path    : '{{ item }}'
+    owner   : 'root'
+    group   : 'root'
+    mode    : 0755
+  with_items:
+    - '{{ bk_home  }}'
+    - '{{ bk_home  }}/.bash_logout'
+    - '{{ bk_home  }}/.bashrc'
+    - '{{ bk_home  }}/.profile'
+    - '{{ bk_sftp_dir }}'
+    - '{{ bk_ssh_dir }}'
+  notify: restart ssh
+
+# SSH conf
+- name: Registering nologin shell
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/shells
+    line    : "/usr/sbin/nologin"
+    regexp  : "^/usr/sbin/nologin"
+    insertafter: EOF
+
+- name: Comment actual configuration for sftp and sshd subsystem
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/ssh/sshd_config
+    line    : '#Subsystem sftp /usr/lib/openssh/sftp-server'
+    regexp  : 'Subsystem sftp /usr/lib/openssh/sftp-server$'
+  notify: restart ssh
+  register: checksshconf
+
+- name: Configuring sshd subsystem PART1
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/ssh/sshd_config
+    line    : "Subsystem sftp internal-sftp"
+    insertafter: '^#Subsystem sftp /usr/lib/openssh/sftp-server$'
+  notify: restart ssh
+  when: checksshconf.changed
+
+- name: Configuring sshd subsystem PART2
+  become: true
+  replace:
+    dest    : /etc/ssh/sshd_config
+    replace : '{{ sshd_bk_match1Line }} '
+    regexp  : '{{ sshd_bk_match1Line }}$'
+    backup  : yes
+  register  : checksshconf2
+  notify: restart ssh
+
+- name: Configuring sshd subsystem PART3
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/ssh/sshd_config
+    line    : '{{ sshd_bk }}'
+    insertafter: 'UsePAM yes'
+    regexp  : '{{ sshd_bk }}'
+  notify: restart ssh
+  when: checksshconf2.changed == false
+
+- name: Configuring sshd subsystem PART4
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/ssh/sshd_config
+    line    : '{{ sshd_bk_match1Line }}'
+    regexp  : '{{ sshd_bk_match1Line }} $'
+  notify: restart ssh
+  when: checksshconf2.changed

@@ -1,0 +1,45 @@
+---
+# package
+apt_cache_valid_time : 3600
+
+# VM main variables
+web_dir    : '/var/www'
+tmp_dest   : '/tmp'
+ssh_dir    : '~/.ssh'
+
+# Connexion with backup-vm
+bk_user    : bk_user
+bk_group   : bk_user
+bk_rsa_pub : 'ssh-rsa [public file]'
+bk_home    : '/home/{{ bk_user }}'
+bk_sftp_dir: '{{ bk_home }}/sftp'
+bk_bk_dir  : '{{ bk_sftp_dir }}/backups'
+bk_log_dir : '{{ bk_home }}/logs'
+bk_cron_dir: '{{ bk_home }}/cron_script'
+bk_ssh_dir : '{{ bk_home }}/.ssh'
+bk_password: password
+
+# Services/Handlers packages names
+nginx           : nginx
+php             : php7.0-fpm
+php5            : php5-fpm
+mysql           : mysql
+elasticsearch   : elasticsearch
+fail2ban        : fail2ban
+postgresql      : postgresql
+postfix         : postfix
+ssh             : ssh
+tomcat7         : tomcat7
+tomcat8         : tomcat8
+ufw             : ufw
+
+# PHP variables
+php_pool_dir    : /etc/php/7.0/fpm/pool.d
+php5_pool_dir   : /etc/php5/fpm/pool.d
+php_run_dir     : /run/php
+listen_owner    : 'www-data'
+listen_group    : 'www-data'
+
+# Nginx variables
+nginx_enabled   : '/etc/nginx/sites-enabled'
+nginx_available : '/etc/nginx/sites-available'

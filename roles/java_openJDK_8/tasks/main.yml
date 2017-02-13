@@ -1,0 +1,10 @@
+---
+- name: Install openjdk-8-jre and openjdk-8-jdk package
+  become: true
+  apt:
+    pkg             : '{{ item }}'
+    state           : present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  with_items: '{{ openjdk_java_pkgs }}'
+

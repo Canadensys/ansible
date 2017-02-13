@@ -1,0 +1,8 @@
+dependencies:
+  - { role: mediawiki_user_setting }
+  - { role: common }
+  - { role: postgresql }
+  - { role: nginx }
+  - { role: php_fpm }
+  - { role: mediawiki }
+  - { role: backup }
