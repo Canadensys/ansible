@@ -33,12 +33,13 @@
     - restart tomcat8
 
 - name: Change the default tomcat8 web directory
+  become: true
   replace:
     dest    : '{{ tomcat8_conf_server }}'
     regexp  : '<Host name="localhost"  appBase="webapps"$'
     replace : '<Host name="localhost"  appBase="{{ tomcat8_webapps }}"'
   notify: 
-     - restart tomcat8
+    - restart tomcat8
 
 - name: ufw - Allow tomcat8 traffic
   become: true
