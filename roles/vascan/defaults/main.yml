@@ -1,0 +1,42 @@
+---
+tomcat_user:        tomcat8
+tomcat_maindir:     '/var/www/data.canadensys.net'
+tomcat_webapps:     '{{ tomcat_maindir }}/webapps'
+vascan_data:        '{{ tomcat_maindir }}/vascan-data'
+vascan_public:      '{{ tomcat_maindir }}/public'
+
+tmp_checkout_dir:    '/tmp/vascan/checkout'
+
+# Attributes related to sources (on GitHub)
+source_dict:
+  data_access:
+    repo: https://github.com/Canadensys/canadensys-data-access.git
+    checkout_dir: '{{ tmp_checkout_dir }}/canadensys-data-access'
+    version: '2.15.0'
+  vascan:
+    repo: https://github.com/Canadensys/vascan.git
+    checkout_dir: '{{ tmp_checkout_dir }}/vascan'
+    version: 'dev'
+
+# Last release version. Mostly use to versionned web assets (e.g. css and js)
+vascan_version: '3.5.4'
+
+elastic_search:
+  host: 127.0.0.1
+  port: 9200
+  create_index: '{{ source_dict.data_access.checkout_dir }}/src/main/resources/script/vascan/vascan_index_creation.txt'
+
+vascan_apps_dir:
+  generated_images:   '{{ vascan_data }}/generated_img/'
+  generated_content:  '{{ tomcat_maindir }}/public/downloads/vascan/'
+
+db_dict:
+  prod:
+    db_name: vascan_newprod
+    db_user: wwwuser
+    db_password: my_password
+    db_host: localhost
+    db_src: '../templates/mysqldump_vascan_newprod.gz'
+    db_dest: '/tmp'
+    db_zip: /tmp/mysqldump_vascan_newprod.gz
+
