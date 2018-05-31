@@ -10,7 +10,7 @@
 
 - name: Enable the AJP 1.3 connector
   become: true
-  tomcat8_connector: name="AJP/1.3"
+  tomcat_connector: name="AJP/1.3"
   notify:
     - restart tomcat8
 
@@ -32,12 +32,12 @@
   notify: 
     - restart tomcat8
 
-- name: Change the default tomcat8 web page directory
+- name: Change the default tomcat8 web directory
   become: true
-  lineinfile: 
-    dest={{ tomcat8_conf_server }}
-    regexp='<Host name="localhost"  appBase="webapps"$'
-    line='     <Host name="localhost"  appBase="{{ tomcat8_webapps }}"'
+  replace:
+    dest    : '{{ tomcat8_conf_server }}'
+    regexp  : '<Host name="localhost"  appBase="webapps"$'
+    replace : '<Host name="localhost"  appBase="{{ tomcat8_webapps }}"'
   notify: 
     - restart tomcat8
 
