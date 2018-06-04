@@ -1,10 +1,9 @@
 ---
-
+vascan_dir_root:     '/var/www/data.canadensys.net'
 vascan_dir:
-  root:     '/var/www/data.canadensys.net'
-  public:      '{{ vascan_dir.root }}/public'
-  generated_content:  '{{ vascan_dir.public }}/downloads/vascan/'
-  data: '{{ vascan_dir.root }}/vascan-data'
+  public:      '{{ vascan_dir_root }}/public'
+  generated_content:  '{{ vascan_dir_root}}/public/downloads/vascan/'
+  data: '{{ vascan_dir_root }}/vascan-data'
 
 # date of the last publication of the Vascan data
 last_publication_date_file: '{{ vascan_dir.data }}/lastpublicationdate.txt'
