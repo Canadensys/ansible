@@ -1,0 +1,31 @@
+---
+
+- include_vars: "{{ansible_distribution}}.yml"
+
+# - name: elasticsearch-install | Add repository keys
+#   apt_key: keyserver="{{item.server}}" id="{{item.key}}" state=present
+#   with_items: elasticsearch_apt_repo_keys
+
+# - name: elasticsearch-install | Add repositories
+#   apt_repository: repo="{{item}}" update_cache=yes
+#   with_items: elasticsearch_apt_repos
+
+- name: elasticsearch-install | Check for Elasticsearch already installed
+  stat: path={{elasticsearch_home}}/lib/elasticsearch-{{elasticsearch_version}}.jar
+  register: version_exists
+
+- name: elasticsearch-install | Download deb
+  get_url: url={{elasticsearch_download_url}}/elasticsearch-{{elasticsearch_version}}.deb dest=/tmp/elasticsearch-{{elasticsearch_version}}.deb mode=0440
+  when: not version_exists.stat.exists
+
+- name: elasticsearch-install | Install Elasticsearch
+  apt: deb=/tmp/elasticsearch-{{elasticsearch_version}}.deb dpkg_options=force-confnew
+  force: yes
+  when: not version_exists.stat.exists
+
+- command: apt-mark showhold
+  register: held_packages
+  changed_when: false
+
+- command: apt-mark hold elasticsearch
+  when: '"elasticsearch" not in held_packages.stdout'
