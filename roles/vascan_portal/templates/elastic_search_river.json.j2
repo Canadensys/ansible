@@ -1,0 +1,11 @@
+{"type" : "jdbc","jdbc" : 
+  { "driver" : "com.mysql.jdbc.Driver", 
+    "url" : "jdbc:mysql://{{ db_dict.prod.db_host }}:3306/{{ db_dict.prod.db_name }}", 
+    "user" : "{{ db_dict.prod.db_user }}", 
+    "password" : "{{ db_dict.prod.db_password }}", 
+    "sql" : "{{ item.value.sql }}", 
+    "strategy" : "oneshot" },
+"index" : {
+  "index" : "vascan",
+  "type" : "{{ item.value.type }}" }
+}

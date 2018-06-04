@@ -70,11 +70,38 @@
   args:
     chdir: '{{ source_dict.vascan.checkout_dir }}'
 
+- name: Install unzip
+  become: true
+  apt:
+    pkg: unzip
+    state: present
+    update_cache    : yes
+
+- name: Download and extract MySql Java Connector for ElasticSearch River plugin
+  unarchive:
+    src: '{{ mysql_java_connector_url }}'
+    dest: '{{ tmp_dest }}'
+    remote_src: yes
+
+- name: Move MySql Java Connector for ElasticSearch River plugin
+  copy:
+    remote_src: yes
+    src     : '{{ tmp_dest }}/{{ mysql_java_connector_version }}/{{ mysql_java_connector_jar }}'
+    dest    : '{{ elasticsearch_plugindir }}/jdbc-river'
+    owner   : '{{ elasticsearch_user }}'
+    group   : '{{ elasticsearch_user }}'
+
 # using curl since posting a file is not supported by the uri module
 - name: Create ElasticSearch Index
   shell: 'curl  -XPOST "{{ elastic_search.host }}:{{ elastic_search.port }}/vascan" \
                 -d @{{ elastic_search.create_index }}'
   warn: False
+
+- name: Prepare ElasticSearch Rivers files
+  template:
+     src: elastic_search_river.json.j2
+     dest: '{{ tmp_dest }}/es_river_{{ item.value.type }}.json'
+  with_dict: '{{ elastic_search_rivers }}'
 
 - name: Move Vascan WAR to Tomcat
   become: true
