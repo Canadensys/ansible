@@ -103,6 +103,13 @@
      dest: '{{ tmp_dest }}/es_river_{{ item.value.type }}.json'
   with_dict: '{{ elastic_search_rivers }}'
 
+# using curl since posting a file is not supported by the uri module
+- name: Create ElasticSearch Rivers
+  shell: 'curl  -XPOST "{{ elastic_search.host }}:{{ elastic_search.port }}/_river/vascan_{{ item.value.type }}_jdbc_river/_meta" \
+                -d @{{ tmp_dest }}/es_river_{{ item.value.type }}.json'
+  warn: False
+  with_dict: '{{ elastic_search_rivers }}'
+
 - name: Move Vascan WAR to Tomcat
   become: true
   copy:
@@ -110,3 +117,4 @@
     src     : '{{ source_dict.vascan.checkout_dir }}/build/libs/vascan-{{ vascan_version }}.war'
     dest    : '{{ tomcat_webapps }}/vascan.war'
     owner   : '{{ tomcat_user }}'
+  notify: restart tomcat8
