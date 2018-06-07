@@ -1,5 +1,11 @@
 ---
 
+#- name: Check ElasticSearch plugin folder
+#  stat:
+#    path: {{ elasticsearch_plugindir }}
+#  register: es_plugin_details
+#  with_items: '{{ elasticsearch_plugins }}'
+
 - name: elasticsearch-plugins Install plugins
   command: "{{elasticsearch_home}}/bin/plugin --install {{item.name}} {%if item.url is defined %} --url {{item.url}}{% endif %} creates={{elasticsearch_plugindir}}/{{item.dir|default(item.name.split('/')[-1])}}"
   when: item.remove is not defined or not item.remove

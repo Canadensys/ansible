@@ -33,6 +33,24 @@
   with_dict: '{{ db_dict }}'
   notify: restart mysql
 
+- name: Retrieve Taxon count from MySQL
+  command: >
+    mysql -u{{ db_dict.prod.db_user }} -p{{ db_dict.prod.db_password }} {{ db_dict.prod.db_name }}
+    --skip-column-names --silent
+    -e"SELECT count(*) from taxon"
+  register: mysql_taxon_count
+  no_log: true
+  changed_when: False
+
+- name: Retrieve Vernacular count from MySQL
+  command: >
+    mysql -u{{ db_dict.prod.db_user }} -p{{ db_dict.prod.db_password }} {{ db_dict.prod.db_name }}
+    --skip-column-names --silent
+    -e"SELECT count(*) from vernacularname"
+  register: mysql_vernacular_count
+  no_log: true
+  changed_when: False
+
 - name: Create application directory structure
   become: true
   file: 
@@ -46,7 +64,14 @@
     pkg: maven
     state: present
     update_cache    : yes
-  
+
+- name: Install jq (lightweight and flexible command-line JSON processor)
+  become: true
+  apt:
+    pkg: jq
+    state: present
+    update_cache    : yes
+
 - name: Clone Vascan and dependencies (canadensys-data-access)
   git:
     repo: '{{ item.value.repo }}'
@@ -83,7 +108,7 @@
     dest: '{{ tmp_dest }}'
     remote_src: yes
 
-- name: Move MySql Java Connector for ElasticSearch River plugin
+- name: Move MySQL Java Connector for ElasticSearch River plugin
   copy:
     remote_src: yes
     src     : '{{ tmp_dest }}/{{ mysql_java_connector_version }}/{{ mysql_java_connector_jar }}'
@@ -93,22 +118,73 @@
 
 # using curl since posting a file is not supported by the uri module
 - name: Create ElasticSearch Index
-  shell: 'curl  -XPOST "{{ elastic_search.host }}:{{ elastic_search.port }}/vascan" \
+  shell: 'curl  -XPOST -s "{{ elastic_search.host }}:{{ elastic_search.port }}/vascan" \
                 -d @{{ elastic_search.create_index }}'
-  warn: False
+  args:
+    warn: false
+
+- name: Retrieve counts from ElasticSearch
+  shell: >
+    curl -XGET -s {{ elastic_search.host }}:{{ elastic_search.port }}/vascan/{{ item.key }}/_count | jq .count
+  register: es_count_output
+  with_dict: '{{ elastic_search_rivers }}'
+  changed_when: False
+
+- name: Creating the dict for ElasticSearch counts
+  set_fact:
+    es_counts: "{{ es_counts|default({}) | combine({item.item.key: item.stdout }) }}"
+  with_items:
+    - "{{ es_count_output.results }}"
+  changed_when: False
 
 - name: Prepare ElasticSearch Rivers files
   template:
      src: elastic_search_river.json.j2
-     dest: '{{ tmp_dest }}/es_river_{{ item.value.type }}.json'
+     dest: '{{ tmp_dest }}/es_river_{{ item.key }}.json'
   with_dict: '{{ elastic_search_rivers }}'
 
 # using curl since posting a file is not supported by the uri module
-- name: Create ElasticSearch Rivers
-  shell: 'curl  -XPOST "{{ elastic_search.host }}:{{ elastic_search.port }}/_river/vascan_{{ item.value.type }}_jdbc_river/_meta" \
-                -d @{{ tmp_dest }}/es_river_{{ item.value.type }}.json'
-  warn: False
-  with_dict: '{{ elastic_search_rivers }}'
+- name: Create ElasticSearch Taxon River
+  shell: 'curl  -XPOST -s "{{ elastic_search.host }}:{{ elastic_search.port }}/_river/{{ elastic_search_rivers.taxon.name }}/_meta" \
+                -d @{{ tmp_dest }}/es_river_taxon.json'
+  args:
+    warn: false
+  when: es_counts['taxon']|int == 0
+
+- name: Waiting until ElasticSearch Taxon count is matching MySQL (retry is expected here)
+  shell: curl -XGET -s {{ elastic_search.host }}:{{ elastic_search.port }}/vascan/taxon/_count | jq .count
+  register: current_taxon_count
+  when: es_counts['taxon']|int == 0
+  until: current_taxon_count.stdout|int == mysql_taxon_count.stdout|int
+  delay: 5
+  retries: 25
+
+- name: Remove ElasticSearch Taxon River
+  shell: 'curl  -XDELETE -s {{ elastic_search.host }}:{{ elastic_search.port }}/_river/{{ elastic_search_rivers.taxon.name }}/'
+  args:
+    warn: false
+  when: es_counts['taxon']|int == 0
+
+- name: Create ElasticSearch Vernacular River
+  shell: 'curl  -XPOST -s "{{ elastic_search.host }}:{{ elastic_search.port }}/_river/{{ elastic_search_rivers.vernacular.name }}/_meta" \
+                -d @{{ tmp_dest }}/es_river_vernacular.json'
+  args:
+    warn: false
+  when: es_counts['vernacular']|int == 0
+
+- name: Waiting until ElasticSearch Vernacular count is matching MySQL (retry is expected here)
+  shell: curl -XGET -s {{ elastic_search.host }}:{{ elastic_search.port }}/vascan/vernacular/_count | jq .count
+  register: current_vernacular_count
+  when: es_counts['vernacular']|int == 0
+  until: current_vernacular_count.stdout|int == mysql_vernacular_count.stdout|int
+  delay: 5
+  retries: 25
+
+- name: Remove ElasticSearch Vernacular River
+  shell: 'curl  -XDELETE -s {{ elastic_search.host }}:{{ elastic_search.port }}/_river/{{ elastic_search_rivers.vernacular.name }}'
+  args:
+    warn: false
+  when: es_counts['vernacular']|int == 0
 
 - name: Move Vascan WAR to Tomcat
   become: true

@@ -25,6 +25,7 @@ vascan_version: '3.5.4'
 elastic_search:
   host: 127.0.0.1
   port: 9200
+  java_port: 9300
   create_index: '{{ source_dict.data_access.checkout_dir }}/src/main/resources/script/vascan/vascan_index_creation.txt'
 
 # used by the ElasticSearch role
@@ -33,17 +34,22 @@ vascan_elasticsearch_plugins:
     url: http://bit.ly/1a8Mcve
     dir: jdbc
 
+# used by the ElasticSearch River JDBC plugin
 mysql_java_connector_version: mysql-connector-java-5.1.31
 mysql_java_connector_url: 'https://dev.mysql.com/get/Downloads/Connector-J/{{ mysql_java_connector_version }}.zip'
 mysql_java_connector_jar: '{{ mysql_java_connector_version }}-bin.jar'
 
 elastic_search_rivers:
- # taxon:
- #   type: taxon
- #   sql: SELECT l1.taxonid as _id,l1.calname as taxonname,l1.calname as sortname,l1.calnamehtml as namehtml, l1.calnamehtmlauthor as namehtmlauthor, l1.status, taxonomy.parentid, l2.calnamehtml AS parentnamehtml, l1.rank as rankname FROM lookup l1 LEFT OUTER JOIN taxonomy on childid = taxonid LEFT OUTER JOIN lookup as l2 on l2.taxonid = taxonomy.parentid
+  taxon:
+    sql: >
+       SELECT l1.taxonid as _id, l1.calname as taxonname, l1.calname as sortname, l1.calnamehtml as namehtml,
+       l1.calnamehtmlauthor as namehtmlauthor, l1.status, taxonomy.parentid, l2.calnamehtml AS parentnamehtml,
+       l1.rank as rankname FROM lookup l1 LEFT OUTER JOIN taxonomy on childid = taxonid LEFT OUTER JOIN lookup as l2
+       ON l2.taxonid = taxonomy.parentid
+    name: vascan_taxon_jdbc_river
   vernacular:
-    type: vernacular
-    sql: SELECT v.id AS _id, v.taxonid ,name as vernacularname,name as sortname,s.status,language,calnamehtml AS taxonnamehtml FROM vernacularname v INNER JOIN status s on statusid = s.id INNER JOIN lookup on lookup.taxonid=v.taxonid
+    sql: SELECT v.id AS _id, v.taxonid, name as vernacularname, name as sortname, s.status, language, calnamehtml AS taxonnamehtml FROM vernacularname v INNER JOIN status s on statusid = s.id INNER JOIN lookup ON lookup.taxonid=v.taxonid
+    name: vascan_vernacular_jdbc_river
 
 vascan_apps_dir:
   generated_images:   '{{ vascan_dir.data }}/generated_img/'

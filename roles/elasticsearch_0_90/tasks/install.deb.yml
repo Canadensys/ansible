@@ -23,9 +23,11 @@
   force: yes
   when: not version_exists.stat.exists
 
-- command: apt-mark showhold
+- name: Check if ElasticSearch is marked as "hold"
+  command: apt-mark showhold
   register: held_packages
   changed_when: false
 
-- command: apt-mark hold elasticsearch
+- name: Mark hold on ElasticSearch version
+  command: apt-mark hold elasticsearch
   when: '"elasticsearch" not in held_packages.stdout'

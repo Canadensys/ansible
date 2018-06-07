@@ -7,7 +7,7 @@
         "password" : "{{ db_dict.prod.db_password }}",
         "sql" : "{{ item.value.sql }}",
         "index" : "vascan",
-        "type" : "{{ item.value.type }}",
+        "type" : "{{ item.key }}",
         "bulk_size" : 500,
         "max_bulk_requests" : 10
     }
