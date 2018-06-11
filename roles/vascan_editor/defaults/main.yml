@@ -1,0 +1,22 @@
+---
+tomcat_user:        tomcat8
+tomcat_webapps:     '{{ vascan_dir_root }}/webapps'
+
+vascan_editor_apps_dir:
+  generated_content:  '{{ vascan_dir.generated_content }}'
+  vascan_sitemap  :   '{{ vascan_dir.public }}/sitemap/vascan/'
+  mysql_backup_dir:  '{{ vascan_dir_root }}/vascan-editor-data/mysqldump/'
+  complete_dwca_dev_dir: '{{ vascan_dir_root }}/vascan-editor-data/dwca/'
+  change_log_dir:       '{{ vascan_dir_root }}/vascan-editor-data/changelog/'
+
+vascan_editor_war: '../templates/vascan-editor.war'
+
+db_dict:
+  editor:
+    db_name: vascan_newdev
+    db_user: editoruser
+    db_password: my_password
+    db_host: localhost
+    db_src: '../templates/mysqldump_vascan_newdev.gz'
+    db_dest: '/tmp'
+    db_zip: /tmp/mysqldump_vascan_newdev.gz
