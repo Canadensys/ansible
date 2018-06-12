@@ -1,0 +1,24 @@
+---
+tomcat_user:        tomcat8
+tomcat_webapps:     '{{ vascan_dir_root }}/webapps'
+
+tmp_checkout_dir:    '/tmp/narwhal/checkout'
+
+google_analytics:
+  site_verification:
+  account:
+
+# Attributes related to sources (on GitHub)
+source_dict:
+  narwhal_api:
+    repo: https://github.com/Canadensys/narwhal-api.git
+    checkout_dir: '{{ tmp_checkout_dir }}/narwhal-api'
+    version: 'master'
+  narwhal_processor:
+    repo: https://github.com/Canadensys/narwhal-processor.git
+    checkout_dir: '{{ tmp_checkout_dir }}/narwhal-processor'
+    version: '1.5.2'
+  canadensys-view-includes:
+    repo: https://github.com/Canadensys/canadensys-view-includes.git
+    checkout_dir: '{{ tmp_checkout_dir }}/canadensys-view-includes'
+    version: 'master'
