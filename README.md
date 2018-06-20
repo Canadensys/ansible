@@ -7,12 +7,22 @@ Ansible playbooks and roles used by canadensys to :
 use: ansible 2.2.0.0 or more
 use: python 2.7.x or more
 
-## how to use
+## How to use
 ### Install security playbook
 $ ansible-playbook -i hosts -l vm_local_102 security_playbook.yml --user user_with_root_access --ask-pass --ask-sudo-pass
 
 ### Install security playbook
 $ ansible-playbook -i hosts -l vm_local_102 wordpress_playbook.yml --user user_with_root_access  --private-key ~/.ssh/your_private_key.rsa --ask-sudo-pass
+
+### Install Vascan and Tools playbook
+Install community roles:
+```
+ansible-galaxy install -r roles/roles_requirements.yml
+```
+
+```
+$ ansible-playbook -i hosts -l vm_local_102 vascan_and_tools_playbook.yml --user user_with_root_access  --private-key ~/.ssh/your_private_key.rsa --become
+``
 
 ## Usable CL:
 to create a password:
