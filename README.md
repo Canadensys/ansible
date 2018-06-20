@@ -21,8 +21,12 @@ ansible-galaxy install -r roles/roles_requirements.yml
 ```
 
 ```
-$ ansible-playbook -i hosts -l vm_local_102 vascan_and_tools_playbook.yml --user user_with_root_access  --private-key ~/.ssh/your_private_key.rsa --become
-``
+$ ansible-playbook -i hosts -l vm_vascan_prod vascan_and_tools_playbook.yml --user user_with_root_access  --private-key ~/.ssh/your_private_key.rsa --become
+```
+
+Not provided with the roles:
+ - MySQL dumps (Vascan and Vascan Editor)
+ - Vascan Editor war file
 
 ## Usable CL:
 to create a password:
