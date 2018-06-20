@@ -55,13 +55,12 @@ vascan_apps_dir:
   generated_images:   '{{ vascan_dir.data }}/generated_img/'
   generated_content:  '{{ vascan_dir.generated_content }}'
 
-db_dict:
-  prod:
-    db_name: vascan_newprod
-    db_user: wwwuser
-    db_password: my_password
-    db_host: localhost
-    db_src: '../templates/mysqldump_vascan_newprod.gz'
-    db_dest: '/tmp'
-    db_zip: /tmp/mysqldump_vascan_newprod.gz
+vascan_db:
+    name: vascan_newprod
+    user: wwwuser
+    password: my_password
+    host: localhost
+    src: '../templates/mysqldump_vascan_newprod.gz'
+    dest: '/tmp'
+    zip: /tmp/mysqldump_vascan_newprod.gz
 

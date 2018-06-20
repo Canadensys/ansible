@@ -3,39 +3,35 @@
 - name: Create databases in MySql
   become: true
   mysql_db:
-    name    : '{{ item.value.db_name }}'
+    name    : '{{ vascan_db.name }}'
     state   : present
-  with_dict: '{{ db_dict }}'
 
 - name: Create database users
   become: true
   mysql_user:
-    name  : '{{ item.value.db_user }}'
-    password: '{{ item.value.db_password }}'
-    priv  : '{{ item.value.db_name }}.*:ALL'
-    host  : '{{ item.value.db_host }}'
+    name  : '{{ vascan_db.user }}'
+    password: '{{ vascan_db.password }}'
+    priv  : '{{ vascan_db.name }}.*:ALL'
+    host  : '{{ vascan_db.host }}'
     state : present
-  with_dict: '{{ db_dict }}'
 
 - name: Copy db files
   become: true
   copy:
-    src     : '{{ item.value.db_src }}'
-    dest    : '{{ item.value.db_dest }}'
-  with_dict: '{{ db_dict }}'
+    src     : '{{ vascan_db.src }}'
+    dest    : '{{ vascan_db.dest }}'
 
 - name: Restore MySQL Database from file
   become: true
   mysql_db:
-    name    : '{{ item.value.db_name }}'
+    name    : '{{ vascan_db.name }}'
     state   : import
-    target  : '{{ item.value.db_zip }}'
-  with_dict: '{{ db_dict }}'
+    target  : '{{ vascan_db.zip }}'
   notify: restart mysql
 
 - name: Retrieve Taxon count from MySQL
   command: >
-    mysql -u{{ db_dict.prod.db_user }} -p{{ db_dict.prod.db_password }} {{ db_dict.prod.db_name }}
+    mysql -u{{ vascan_db.user }} -p{{ vascan_db.password }} {{ vascan_db.name }}
     --skip-column-names --silent
     -e"SELECT count(*) from taxon"
   register: mysql_taxon_count
@@ -44,7 +40,7 @@
 
 - name: Retrieve Vernacular count from MySQL
   command: >
-    mysql -u{{ db_dict.prod.db_user }} -p{{ db_dict.prod.db_password }} {{ db_dict.prod.db_name }}
+    mysql -u{{ vascan_db.user }} -p{{ vascan_db.password }} {{ vascan_db.name }}
     --skip-column-names --silent
     -e"SELECT count(*) from vernacularname"
   register: mysql_vernacular_count
@@ -89,6 +85,12 @@
   template:
      src: vascan-config.properties.j2
      dest: '{{ source_dict.vascan.checkout_dir }}/config/production/vascan-config.properties'
+
+- name: Create Vascan log config
+  copy:
+    remote_src: yes
+    src     : '{{ source_dict.vascan.checkout_dir }}/src/main/resources/log4j.xml.example'
+    dest    : '{{ source_dict.vascan.checkout_dir }}/src/main/resources/log4j.xml'
 
 - name: Build Vascan (without running tests)
   shell: ./gradlew clean buildProductionQuiet -x test

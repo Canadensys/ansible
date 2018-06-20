@@ -12,9 +12,9 @@ generatedContent.imageFolder= {{ vascan_apps_dir.generated_images }}
 generatedContent.generatedFilesFolder= {{ vascan_apps_dir.generated_content }}
 
 database.driver=com.mysql.jdbc.Driver
-database.url=jdbc:mysql://{{ db_dict.prod.db_host }}/{{ db_dict.prod.db_name }}?useUnicode=true&amp;characterEncoding=utf8&amp;characterSetResults=utf8
-database.user={{ db_dict.prod.db_user }}
-database.password={{ db_dict.prod.db_password }}
+database.url=jdbc:mysql://{{ vascan_db.host }}/{{ vascan_db.name }}?useUnicode=true&amp;characterEncoding=utf8&amp;characterSetResults=utf8
+database.user={{ vascan_db.user }}
+database.password={{ vascan_db.password }}
 database.idleConnectionTestPeriod=60
 hibernate.dialect=org.hibernate.dialect.MySQLDialect
 hibernate.show_sql=false

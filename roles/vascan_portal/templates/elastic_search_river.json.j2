@@ -2,9 +2,9 @@
     "type" : "jdbc",
     "jdbc" : {
         "driver" : "com.mysql.jdbc.Driver",
-        "url" : "jdbc:mysql://{{ db_dict.prod.db_host }}:3306/{{ db_dict.prod.db_name }}?useUnicode=true&characterEncoding=utf8&haracterSetResults=utf8",
-        "user" : "{{ db_dict.prod.db_user }}",
-        "password" : "{{ db_dict.prod.db_password }}",
+        "url" : "jdbc:mysql://{{ vascan_db.host }}:3306/{{ vascan_db.name }}?useUnicode=true&characterEncoding=utf8&haracterSetResults=utf8",
+        "user" : "{{ vascan_db.user }}",
+        "password" : "{{ vascan_db.password }}",
         "sql" : "{{ item.value.sql }}",
         "index" : "vascan",
         "type" : "{{ item.key }}",
