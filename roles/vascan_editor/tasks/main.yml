@@ -3,34 +3,30 @@
 - name: Create databases in MySql
   become: true
   mysql_db:
-    name    : '{{ item.value.db_name }}'
+    name    : '{{ vascan_editor_db.name }}'
     state   : present
-  with_dict: '{{ db_dict }}'
 
 - name: Create database users
   become: true
   mysql_user:
-    name  : '{{ item.value.db_user }}'
-    password: '{{ item.value.db_password }}'
-    priv  : '{{ item.value.db_name }}.*:ALL'
-    host  : '{{ item.value.db_host }}'
+    name  : '{{ vascan_editor_db.user }}'
+    password: '{{ vascan_editor_db.password }}'
+    priv  : '{{ vascan_editor_db.name }}.*:ALL'
+    host  : '{{ vascan_editor_db.host }}'
     state : present
-  with_dict: '{{ db_dict }}'
 
 - name: Copy db files
   become: true
   copy:
-    src     : '{{ item.value.db_src }}'
-    dest    : '{{ item.value.db_dest }}'
-  with_dict: '{{ db_dict }}'
+    src     : '{{ vascan_editor_db.src }}'
+    dest    : '{{ vascan_editor_db.dest }}'
 
 - name: Restore MySQL Database from file
   become: true
   mysql_db:
-    name    : '{{ item.value.db_name }}'
+    name    : '{{ vascan_editor_db.name }}'
     state   : import
-    target  : '{{ item.value.db_zip }}'
-  with_dict: '{{ db_dict }}'
+    target  : '{{ vascan_editor_db.zip }}'
   notify: restart mysql
 
 - name: Create Vascan Editor directory structure

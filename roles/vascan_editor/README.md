@@ -12,5 +12,4 @@ The following roles should be applied first:
 * vascan
 
 A valid database dump should be available at the path configured with
-db_dict.editor.db_src and the Vascan Editor war should be at vascan_editor_war
-
+vascan_editor_db.src and the Vascan Editor war should be at vascan_editor_war

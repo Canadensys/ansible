@@ -11,12 +11,11 @@ vascan_editor_apps_dir:
 
 vascan_editor_war: '../templates/vascan-editor.war'
 
-db_dict:
-  editor:
-    db_name: vascan_newdev
-    db_user: editoruser
-    db_password: my_password
-    db_host: localhost
-    db_src: '../templates/mysqldump_vascan_newdev.gz'
-    db_dest: '/tmp'
-    db_zip: /tmp/mysqldump_vascan_newdev.gz
+vascan_editor_db:
+    name: vascan_newdev
+    user: editoruser
+    password: my_password
+    host: localhost
+    src: '../templates/mysqldump_vascan_newdev.gz'
+    dest: '/tmp'
+    zip: /tmp/mysqldump_vascan_newdev.gz
