@@ -52,8 +52,8 @@ elastic_search_rivers:
     name: vascan_vernacular_jdbc_river
 
 vascan_apps_dir:
-  generated_images:   '{{ vascan_dir.data }}/generated_img/'
-  generated_content:  '{{ vascan_dir.generated_content }}'
+  generated_images:   '{{ vascan_dir.data }}/generated_img/'
+  generated_content:  '{{ vascan_dir.downloadable_content }}'
 
 vascan_db:
     name: vascan_newprod
