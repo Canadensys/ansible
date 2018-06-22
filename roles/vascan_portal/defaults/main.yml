@@ -8,19 +8,21 @@ google_analytics:
   site_verification:
   account:
 
+# Last release version. Mostly use to versionned web assets (e.g. css and js)
+# We normaly match the version with https://github.com/Canadensys/vascan/releases
+vascan_version: '3.5.5'
+data_access_version: '2.16.0'
+
 # Attributes related to sources (on GitHub)
 source_dict:
   data_access:
     repo: https://github.com/Canadensys/canadensys-data-access.git
     checkout_dir: '{{ tmp_checkout_dir }}/canadensys-data-access'
-    version: '2.15.0'
+    version: '{{ data_access_version }}'
   vascan:
     repo: https://github.com/Canadensys/vascan.git
     checkout_dir: '{{ tmp_checkout_dir }}/vascan'
-    version: 'dev'
-
-# Last release version. Mostly use to versionned web assets (e.g. css and js)
-vascan_version: '3.5.4'
+    version: '{{ vascan_version }}'
 
 elastic_search:
   host: 127.0.0.1
