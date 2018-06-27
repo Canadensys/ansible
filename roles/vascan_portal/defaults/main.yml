@@ -13,6 +13,9 @@ google_analytics:
 vascan_version: '3.5.5'
 data_access_version: '2.16.0'
 
+# root path of the log files produced by Vascan. Without trailing slash.
+vascan_log_file_root: '{{ vascan_dir.data }}'
+
 # Attributes related to sources (on GitHub)
 source_dict:
   data_access:

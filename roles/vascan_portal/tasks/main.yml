@@ -86,10 +86,9 @@
      src: vascan-config.properties.j2
      dest: '{{ source_dict.vascan.checkout_dir }}/config/production/vascan-config.properties'
 
-- name: Create Vascan log config
-  copy:
-    remote_src: yes
-    src     : '{{ source_dict.vascan.checkout_dir }}/src/main/resources/log4j.xml.example'
+- name: Create Vascan log4j config
+  template:
+    src     : 'vascan_log4j.xml.j2'
     dest    : '{{ source_dict.vascan.checkout_dir }}/src/main/resources/log4j.xml'
 
 - name: Build Vascan (without running tests)
