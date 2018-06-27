@@ -26,7 +26,7 @@
     chdir: '{{ source_dict.narwhal_processor.checkout_dir }}'
 
 - name: Build narwhal_api
-  shell: ./gradlew war
+  shell: ./gradlew clean buildProductionQuiet
   args:
     chdir: '{{ source_dict.narwhal_api.checkout_dir }}'
 
@@ -34,7 +34,7 @@
   become: true
   copy:
     remote_src: yes
-    src     : '{{ source_dict.narwhal_api.checkout_dir }}/build/libs/narwhal-api.war'
+    src     : '{{ source_dict.narwhal_api.checkout_dir }}/build/libs/tools-{{ narwhal_api_version }}.war'
     dest    : '{{ tomcat_webapps }}/tools.war'
     owner   : '{{ tomcat_user }}'
   notify: restart tomcat8
