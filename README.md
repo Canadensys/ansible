@@ -24,6 +24,7 @@ Run playbook (note that the database dump will be restored on all run)
 ```
 $ ansible-playbook -i hosts -l vm_vascan_prod vascan_and_tools_playbook.yml --user user_with_root_access  --private-key ~/.ssh/your_private_key.rsa --become
 ```
+*vm_vascan_prod shall be declared in your host file, the matching group_vars will be used for the nginx setup. 
 
 Files not provided with the roles:
  - MySQL dumps (see `vascan_db.src`  and `vascan_editor_db.src`) 
