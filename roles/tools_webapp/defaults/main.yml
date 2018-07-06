@@ -1,8 +1,14 @@
 ---
 tomcat_user:        tomcat8
-tomcat_webapps:     '{{ vascan_dir_root }}/webapps'
+
+tools_dir_root:     '/var/www/data.canadensys.net'
+tomcat_webapps:     '{{ tools_dir_root }}/webapps'
 
 tmp_checkout_dir:    '/tmp/narwhal/checkout'
+
+tools_dir_data: '{{ tools_dir_root }}/tools-data'
+# root path of the log files produced by tools(narhwal-api). Without trailing slash.
+tools_log_file_root: '{{ tools_dir_data }}'
 
 # Last release version. Mostly use to versionned web assets (e.g. css and js)
 # We normaly match the version with https://github.com/Canadensys/narwhal-api/releases
