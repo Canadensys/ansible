@@ -15,10 +15,22 @@
     depth: 1
   with_dict: '{{ source_dict }}'
 
+- name: Create narwhal-api log4j config
+  template:
+    src     : 'tools_log4j.xml.j2'
+    dest    : '{{ source_dict.narwhal_api.checkout_dir }}/src/main/resources/log4j.xml'
+
 - name: Create narwhal-api config
   template:
      src: narwhal-api-config.properties.j2
      dest: '{{ source_dict.narwhal_api.checkout_dir }}/config/production/narwhal-api-config.properties'
+
+- name: Create data directory
+  file:
+    path: '{{ tools_dir_data }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
 
 - name: Build narwhal_processor locally
   command: mvn install
