@@ -1,0 +1,71 @@
+---
+tomcat_user:        tomcat8
+tomcat_webapps:     '{{ vascan_dir_root }}/webapps'
+
+tmp_checkout_dir:    '/tmp/vascan/checkout'
+
+google_analytics:
+  site_verification:
+  account:
+
+# Last release version. Mostly use to versionned web assets (e.g. css and js)
+# We normaly match the version with https://github.com/Canadensys/vascan/releases
+vascan_version: '3.5.5'
+data_access_version: '2.16.0'
+
+# root path of the log files produced by Vascan. Without trailing slash.
+vascan_log_file_root: '{{ vascan_dir.data }}'
+
+# Attributes related to sources (on GitHub)
+source_dict:
+  data_access:
+    repo: https://github.com/Canadensys/canadensys-data-access.git
+    checkout_dir: '{{ tmp_checkout_dir }}/canadensys-data-access'
+    version: '{{ data_access_version }}'
+  vascan:
+    repo: https://github.com/Canadensys/vascan.git
+    checkout_dir: '{{ tmp_checkout_dir }}/vascan'
+    version: '{{ vascan_version }}'
+
+elastic_search:
+  host: 127.0.0.1
+  port: 9200
+  java_port: 9300
+  create_index: '{{ source_dict.data_access.checkout_dir }}/src/main/resources/script/vascan/vascan_index_creation.txt'
+
+# used by the ElasticSearch role
+vascan_elasticsearch_plugins: 
+  - name: jdbc-river
+    url: http://bit.ly/1a8Mcve
+    dir: jdbc
+
+# used by the ElasticSearch River JDBC plugin
+mysql_java_connector_version: mysql-connector-java-5.1.31
+mysql_java_connector_url: 'https://dev.mysql.com/get/Downloads/Connector-J/{{ mysql_java_connector_version }}.zip'
+mysql_java_connector_jar: '{{ mysql_java_connector_version }}-bin.jar'
+
+elastic_search_rivers:
+  taxon:
+    sql: >
+       SELECT l1.taxonid as _id, l1.calname as taxonname, l1.calname as sortname, l1.calnamehtml as namehtml,
+       l1.calnamehtmlauthor as namehtmlauthor, l1.status, taxonomy.parentid, l2.calnamehtml AS parentnamehtml,
+       l1.rank as rankname FROM lookup l1 LEFT OUTER JOIN taxonomy on childid = taxonid LEFT OUTER JOIN lookup as l2
+       ON l2.taxonid = taxonomy.parentid
+    name: vascan_taxon_jdbc_river
+  vernacular:
+    sql: SELECT v.id AS _id, v.taxonid, name as vernacularname, name as sortname, s.status, language, calnamehtml AS taxonnamehtml FROM vernacularname v INNER JOIN status s on statusid = s.id INNER JOIN lookup ON lookup.taxonid=v.taxonid
+    name: vascan_vernacular_jdbc_river
+
+vascan_apps_dir:
+  generated_images:   '{{ vascan_dir.data }}/generated_img/'
+  generated_content:  '{{ vascan_dir.downloadable_content }}'
+
+vascan_db:
+    name: vascan_newprod
+    user: wwwuser
+    password: my_password
+    host: localhost
+    src: '../templates/mysqldump_vascan_newprod.gz'
+    dest: '/tmp'
+    zip: /tmp/mysqldump_vascan_newprod.gz
+

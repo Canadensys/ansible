@@ -1,0 +1,11 @@
+- name: restart tomcat8
+  become: true
+  service:
+    name    : '{{ tomcat8 }}'
+    state   : restarted
+
+- name: restart mysql
+  become: true
+  service:
+    name    : '{{ mysql }}'
+    state   : restarted

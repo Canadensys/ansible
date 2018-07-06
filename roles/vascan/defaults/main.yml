@@ -1,0 +1,10 @@
+---
+vascan_dir_root: '/var/www/data.canadensys.net'
+vascan_dir_public: '{{ vascan_dir_root }}/public'
+vascan_dir:
+  downloads: '{{ vascan_dir_public}}/downloads/'
+  downloadable_content:  '{{ vascan_dir_public}}/downloads/vascan/'
+  data: '{{ vascan_dir_root }}/vascan-data'
+
+# date of the last publication of the Vascan data
+last_publication_date_file: '{{ vascan_dir.data }}/lastpublicationdate.txt'

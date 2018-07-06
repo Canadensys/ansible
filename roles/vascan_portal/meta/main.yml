@@ -1,0 +1,2 @@
+dependencies:
+  - { role: elasticsearch_0_90, elasticsearch_plugins: '{{ vascan_elasticsearch_plugins }}' }

@@ -1,0 +1,25 @@
+---
+tomcat_user:        tomcat8
+tomcat_webapps:     '{{ vascan_dir_root }}/webapps'
+
+tmp_checkout_dir:    '/tmp/narwhal/checkout'
+
+# Last release version. Mostly use to versionned web assets (e.g. css and js)
+# We normaly match the version with https://github.com/Canadensys/narwhal-api/releases
+narwhal_api_version: '1.3.5'
+narwhal_processor_version: '1.5.2'
+
+google_analytics:
+  site_verification:
+  account:
+
+# Attributes related to sources (on GitHub)
+source_dict:
+  narwhal_api:
+    repo: https://github.com/Canadensys/narwhal-api.git
+    checkout_dir: '{{ tmp_checkout_dir }}/narwhal-api'
+    version: '{{ narwhal_api_version }}'
+  narwhal_processor:
+    repo: https://github.com/Canadensys/narwhal-processor.git
+    checkout_dir: '{{ tmp_checkout_dir }}/narwhal-processor'
+    version: '{{ narwhal_processor_version }}'

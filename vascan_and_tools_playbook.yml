@@ -1,0 +1,14 @@
+---
+- name: Install Vascan, Vascan Editor and narwhal-api stack
+  hosts: all
+
+  roles:
+    - common
+    - mysql
+    - tomcat8
+    - vascan
+    # vascan_portal will install elasticsearch_0_90 
+    - vascan_portal
+    - vascan_editor
+    - tools_webapp
+    - jdauphant.nginx

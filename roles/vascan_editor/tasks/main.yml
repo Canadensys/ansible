@@ -1,0 +1,48 @@
+---
+# Setup MySQL Database
+- name: Create databases in MySql
+  become: true
+  mysql_db:
+    name    : '{{ vascan_editor_db.name }}'
+    state   : present
+
+- name: Create database users
+  become: true
+  mysql_user:
+    name  : '{{ vascan_editor_db.user }}'
+    password: '{{ vascan_editor_db.password }}'
+    priv  : '{{ vascan_editor_db.name }}.*:ALL'
+    host  : '{{ vascan_editor_db.host }}'
+    state : present
+
+- name: Copy db files
+  become: true
+  copy:
+    src     : '{{ vascan_editor_db.src }}'
+    dest    : '{{ vascan_editor_db.dest }}'
+
+- name: Restore MySQL Database from file
+  become: true
+  mysql_db:
+    name    : '{{ vascan_editor_db.name }}'
+    state   : import
+    target  : '{{ vascan_editor_db.zip }}'
+  notify: restart mysql
+
+- name: Create Vascan Editor directory structure
+  become: true
+  file: 
+    path: "{{ item.value }}"
+    state: directory
+    owner: '{{ tomcat_user }}'
+  with_dict: '{{ vascan_editor_apps_dir }}'
+
+- name: Move Vascan Editor WAR to Tomcat
+  become: true
+  copy:
+    src     : '{{ vascan_editor_war }}'
+    dest    : '{{ tomcat_webapps }}'
+    owner   : '{{ tomcat_user }}'
+  notify: restart tomcat8
+
+#TODO cron job to rebuild Vascan Portal database from Editor database.

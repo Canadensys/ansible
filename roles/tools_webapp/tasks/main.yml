@@ -1,0 +1,40 @@
+---
+
+- name: Install Maven
+  become: true
+  apt:
+    pkg: maven
+    state: present
+    update_cache    : yes
+
+- name: Clone narwhal and dependencies
+  git:
+    repo: '{{ item.value.repo }}'
+    dest: '{{ item.value.checkout_dir }}'
+    version: '{{ item.value.version }}'
+    depth: 1
+  with_dict: '{{ source_dict }}'
+
+- name: Create narwhal-api config
+  template:
+     src: narwhal-api-config.properties.j2
+     dest: '{{ source_dict.narwhal_api.checkout_dir }}/config/production/narwhal-api-config.properties'
+
+- name: Build narwhal_processor locally
+  command: mvn install
+  args:
+    chdir: '{{ source_dict.narwhal_processor.checkout_dir }}'
+
+- name: Build narwhal_api
+  shell: ./gradlew clean buildProductionQuiet
+  args:
+    chdir: '{{ source_dict.narwhal_api.checkout_dir }}'
+
+- name: Move narwhal_api (tools) WAR to Tomcat
+  become: true
+  copy:
+    remote_src: yes
+    src     : '{{ source_dict.narwhal_api.checkout_dir }}/build/libs/tools-{{ narwhal_api_version }}.war'
+    dest    : '{{ tomcat_webapps }}/tools.war'
+    owner   : '{{ tomcat_user }}'
+  notify: restart tomcat8
