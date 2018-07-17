@@ -3,6 +3,7 @@ tomcat_user:        tomcat8
 tomcat_webapps:     '{{ vascan_dir_root }}/webapps'
 
 vascan_editor_apps_dir:
+  tomcat_web_apps: '{{ tomcat_webapps }}'
   generated_content:  '{{ vascan_dir.downloadable_content }}'
   vascan_sitemap  :   '{{ vascan_dir_public }}/sitemap/vascan/'
   mysql_backup_dir:  '{{ vascan_dir_root }}/vascan-editor-data/mysqldump/'
