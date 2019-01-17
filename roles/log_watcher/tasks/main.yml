@@ -8,7 +8,24 @@
   with_items: '{{ logwatch_pkgs }}'
 
 - name: Email log summary daily
-  lineinfile: dest=/etc/cron.daily/00logwatch
-              regexp="^/usr/sbin/logwatch"
-              line="/usr/sbin/logwatch --output mail --mailto {{ logwatch_email }} --detail high"
-              state=present create=yes
+  cron:
+    backup      : yes
+    cron_file   : '00logwatch'
+    minute      : "0"
+    hour        : "0"
+    job         : "/usr/sbin/logwatch --output mail --mailto {{ logwatch_email }} --detail high"
+    state       : absent
+    user        : 'root'
+    name        : Logwatch email log summary daily
+
+- name: Email log summary weekly
+  cron:
+    backup      : yes
+    cron_file   : '00logwatch'
+    minute      : "0"
+    hour        : "0"
+    weekday     : "0"
+    job         : "/usr/sbin/logwatch --output mail --mailto {{ logwatch_email }} --detail high"
+    state       : present
+    user        : 'root'
+    name        : Logwatch email log summary Weekly
