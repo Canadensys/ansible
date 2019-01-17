@@ -23,6 +23,7 @@ commom_pkgs_1604:
   - apparmor-profiles
   - python-selinux
   - unattended-upgrades
+  - ca-certificates
 
 commom_pkgs_1404:
   - aptitude
@@ -47,4 +48,6 @@ commom_pkgs_1404:
   - apparmor-profiles
   - python-selinux
   - unattended-upgrades
+  - ca-certificates
 
+apt_cache_valid_time: 3600

@@ -5,12 +5,14 @@
     update_cache: yes
     cache_valid_time: '{{ apt_cache_valid_time }}'
   register: update_action
+  tags: first_install
  
 - name: Upgrade APT to the latest packages
   become: true
   apt:
     upgrade: safe
   when: update_action.changed
+  tags: first_install
 
 - name: Install Common packages ubuntu 16.04
   become: true
@@ -21,6 +23,7 @@
     cache_valid_time: '{{ apt_cache_valid_time }}'
   with_items: '{{ commom_pkgs_1604 }}'
   when: ansible_distribution_version == "16.04"
+  tags: first_install
 
 - name: Install Common packages ubuntu 14.04
   become: true
@@ -31,3 +34,4 @@
     cache_valid_time: '{{ apt_cache_valid_time }}'
   with_items: '{{ commom_pkgs_1404 }}'
   when: ansible_distribution_version == "14.04"
+  tags: first_install
