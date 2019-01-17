@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+"""
+Title : {{ tools_c_name }} Backup
+Author: Canadensys
+Date  : 2018-11
+"""
+
+import sys,os
+import tarfile
+import time
+
+############
+# Variables 
+############
+
+#--- Variables files ---#
+site_name     = "{{ tools_c_name }}"
+main_bk_dir   = "{{ tools_backup_dir }}"
+main_app_dir  = "{{ dir_root }}"
+current_date  = (time.strftime("%d-%m-%Y"))
+app_zip_file  = main_bk_dir+"/"+site_name+"_website.tar.gz"
+
+#--- Variables logfile ---#
+logfile     = "{{ tools_backup_log_file }}"
+
+#--- Variables for tests ---#
+space_default_needed = 10000
+
+############
+# Script
+############
+
+#--- Test available space ---#
+def test_available_space():
+    size = os.statvfs(main_bk_dir)
+    available_space=(size.f_bavail * size.f_frsize) / 1024
+    return available_space
+
+#--- Backup App files ---#
+def backup_app_files():
+    print_log('\tStart backup files\n')
+    os.system("tar -zcf "+app_zip_file+' --directory="'+main_app_dir+'" .')
+    print_log('\tEnd   backup files\n')
+
+#--- Print on log ---#
+def print_log(s):
+  f = open(logfile, 'a' )
+  ti = time.strftime("%d-%m-%Y %H:%M:%S")
+  f.write("{}:::\t {}".format(ti,s))
+  f.close()
+
+#--- MAIN ---# 
+def main():
+    if test_available_space  > space_default_needed:
+        print_log('##### Start of '+current_date+' Daily Backup\n\n')
+        backup_app_files(log)
+        print_log('##### End of '+current_date+' Daily Backup\n\n')
+    else:
+        print_log('!!!!!\n WARNING NOT ENOUGHT SPACE for '+current_date+' Daily Backup\n!!!!!\n')
+
+if __name__ == '__main__':
+    main()

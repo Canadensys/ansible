@@ -6,6 +6,5 @@ Install and configure the Canadensys tools web application (narwhal).
 
 The following roles should be applied first:
 
-* common
 * mysql
 * tomcat8

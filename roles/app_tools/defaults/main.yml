@@ -1,0 +1,106 @@
+---
+#
+#
+# Generic information
+#
+#
+
+
+canadensys_user : vm_user_name
+canadensys_grp  : vm_user_group
+
+# Directories
+nfs_root    : '/data'
+dir_root    : '/var/www/data.canadensys.net'
+dir_root_public : '{{ dir_root }}/public'
+dir_webapps : '{{ dir_root }}/webapps'
+## backup directory
+backup_root : '/Backups'
+## tmp deploy
+tmp_checkout_dir: '/tmp/narwhal/checkout'
+
+# Tomcat
+tomcat_user     : tomcat8
+tomcat          : tomcat8
+tomcat8_webapps : '{{ dir_webapps }}' 
+tomcat8_maindir : '{{ dir_root }}'
+tomcat_webapps  : '{{ dir_webapps }}' 
+tomcat_maindir  : '{{ dir_root }}'
+
+# Java
+java_role     : 'java_openJDK_8'
+java_home_path: '/usr/lib/jvm/java-1.8.0-openjdk-amd64'
+
+# Google
+google_analytics_site_verification  : google_key
+google_analytics_account            : google_account
+
+# NGINX
+nginx_server_host: data.canadensys.net
+nginx_sites:
+  vascan:
+    - listen 80
+    - server_name {{ nginx_server_host }}
+    - root {{ dir_root_public }}
+    - 'location /tools { 
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://localhost:8080/tools/;
+      }'
+    - 'location /sitemap/ {
+      }'
+    - 'location /common/ {
+      }'
+
+
+#
+#
+# TOOLS
+#
+#
+
+tools_name      : 'tools'
+tools_c_name    : 'canadensys_{{ tools_name }}'
+
+# NFS Directories
+tools_nfs         : '{{ nfs_root }}/{{ tools_c_name }}'
+tools_nfs_data    : '{{ tools_nfs }}/tools-data'
+tools_dir_scripts : '{{ tools_nfs }}/scripts'
+
+# Directories
+tools_dir       : '{{ dir_root }}'
+tools_dir_data  : '{{ tools_dir }}/tools-data'
+
+# root path of the log files produced by tools(narhwal-api). Without trailing slash.
+tools_log_file_root: '{{ tools_dir_data }}'
+
+# Last release version. Mostly use to versionned web assets (e.g. css and js)
+# We normaly match the version with https://github.com/Canadensys/narwhal-api/releases
+narwhal_api_version: '1.3.5'
+narwhal_processor_version: '1.5.2'
+
+# Attributes related to sources (on GitHub)
+source_dict:
+  narwhal_api:
+    repo: https://github.com/Canadensys/narwhal-api.git
+    checkout_dir: '{{ tmp_checkout_dir }}/narwhal-api'
+    version: '{{ narwhal_api_version }}'
+  narwhal_processor:
+    repo: https://github.com/Canadensys/narwhal-processor.git
+    checkout_dir: '{{ tmp_checkout_dir }}/narwhal-processor'
+    version: '{{ narwhal_processor_version }}'
+
+# Backup
+tools_backup_log_file : '{{ tools_dir_data }}/vascan_backup.log'
+tools_backup_name : 'Backup {{ tools_c_name }} (daily schedule)'
+tools_backup_file : '{{ tools_c_name }}-DailyBackups'
+tools_backup_day  : '*'
+tools_backup_hour : '3'
+tools_backup_min  : '30'
+tools_backup_user : '{{ canadensys_user }}'
+tools_backup_grp  : '{{ canadensys_grp }}'
+tools_backup_job  : '/usr/bin/python {{ tools_backup_d }}'
+tools_backup_s    : 'tools_backup.py.j2'
+tools_backup_d    : '{{ tools_dir_scripts }}/tools_backup.py'
+tools_backup_dir  : '{{ backup_root }}/{{ tools_c_name }}'
+

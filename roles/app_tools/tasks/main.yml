@@ -1,0 +1,215 @@
+---
+# is it on nfs
+- name: Set is on nfs to false
+  set_fact:
+    is_on_nfs: false
+  tags:
+    - tools
+    - tools-directories
+
+- name: Set is on nfs if tools_nfs exist and tools_nfs != tools_dir
+  set_fact:
+    is_on_nfs: true
+  when : tools_nfs is defined and not (tools_nfs == tools_dir)
+  tags:
+    - tools
+    - tools-directories
+
+- name: Set tools_nfs if is not on nfs
+  set_fact:
+    tools_nfs: '{{ tools_dir }}'
+  when: not is_on_nfs
+  tags:
+    - tools
+    - tools-directories
+
+# Create tmp directory
+- name: Create tmp deployment directory 
+  become: true
+  file:
+    path: '{{ tmp_checkout_dir }}'
+    state: directory
+  tags:
+    - tools
+    - tools-directories
+
+#- debug:
+#    msg: "is_on_nfs : {{ is_on_nfs }}"
+#  tags:
+#    - tools
+
+# Create directories
+- name: Create webapp directory
+  become: true
+  file:
+    path: '{{ tomcat_webapps }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  tags:
+    - tools
+    - tools-directories
+
+- name: Create tools directory
+  become: true
+  file:
+    path: '{{ tools_dir }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  tags:
+    - tools
+    - tools-directories
+  
+- name: Create tools data directory if not nfs
+  become: true
+  file:
+    path: '{{ tools_dir_data }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  when: not is_on_nfs
+  tags:
+    - tools
+    - tools-directories
+
+- name: Create nfs
+  become: true
+  file:
+    path: '{{ tools_nfs_data }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  when: is_on_nfs
+  tags:
+    - tools
+    - tools-directories
+  
+- name: Link nfs and root directory
+  become: true
+  file:
+    src   : '{{ tools_nfs_data }}'
+    dest  : '{{ tools_dir_data }}'
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+    state : link
+  when: is_on_nfs
+  tags:
+    - tools
+    - tools-directories
+
+# Install tools
+- name: Install Maven
+  become: true
+  apt:
+    pkg: maven
+    state: present
+    update_cache    : yes
+  tags:
+    - tools
+    - tools-install
+
+- name: Clone narwhal and dependencies
+  git:
+    repo: '{{ item.value.repo }}'
+    dest: '{{ item.value.checkout_dir }}'
+    version: '{{ item.value.version }}'
+    depth: 1
+  with_dict: '{{ source_dict }}'
+  tags:
+    - tools
+    - tools-install
+
+- name: Create narwhal-api log4j config
+  template:
+    src     : 'tools_log4j.xml.j2'
+    dest    : '{{ source_dict.narwhal_api.checkout_dir }}/src/main/resources/log4j.xml'
+  tags:
+    - tools
+    - tools-install
+
+- name: Create narwhal-api config
+  template:
+     src: narwhal-api-config.properties.j2
+     dest: '{{ source_dict.narwhal_api.checkout_dir }}/config/production/narwhal-api-config.properties'
+  tags:
+    - tools
+    - tools-install
+
+- name: Build narwhal_processor locally
+  command: mvn install -Dmaven.test.skip=true --batch-mode 
+  args:
+    chdir: '{{ source_dict.narwhal_processor.checkout_dir }}'
+  tags:
+    - tools
+    - tools-install
+
+- name: Build narwhal_api
+  shell: ./gradlew clean buildProductionQuiet
+  args:
+    chdir: '{{ source_dict.narwhal_api.checkout_dir }}'
+  tags:
+    - tools
+    - tools-install
+
+- name: Move narwhal_api (tools) WAR to Tomcat
+  become: true
+  copy:
+    remote_src: yes
+    src     : '{{ source_dict.narwhal_api.checkout_dir }}/build/libs/tools-{{ narwhal_api_version }}.war'
+    dest    : '{{ tomcat_webapps }}/tools.war'
+    owner   : '{{ tomcat_user }}'
+  notify: restart tomcat
+  tags:
+    - tools
+    - tools-install
+
+# Setup Backup
+- name: Prepare Vascan Portal Backup Cron directory structure
+  become: true
+  file: 
+    path  : "{{ item }}"
+    owner : '{{ tools_backup_user }}'
+    group : '{{ tools_backup_grp }}'
+    state : directory
+  with_items:
+    - '{{ tools_dir_scripts }}'
+    - '{{ tools_backup_dir }}'
+  tags:
+    - tools
+    - tools-backup
+
+- name: Prepare Vascan Portal Log File
+  become: true
+  file: 
+    path  : "{{ item }}"
+    owner : '{{ tools_backup_user }}'
+    group : '{{ tools_backup_grp }}'
+    state : touch
+  with_items:
+    - '{{ tools_backup_log_file }}'
+  tags:
+    - tools
+    - tools-backup
+
+- name: Copy backup script in crondir and execute
+  become: true
+  template:
+    src   : '{{ tools_backup_s }}'
+    dest  : '{{ tools_backup_d }}'
+    mode  : 0500
+    owner : '{{ tools_backup_user }}'
+  tags:
+    - tools
+    - tools-backup
+
+- name: Creates minutes checker cronjob
+  become: true
+  cron: minute={{ tools_backup_min }} hour={{ tools_backup_hour }}
+        name={{ tools_backup_name }}
+        cron_file={{ tools_backup_file }}
+        user={{ tools_backup_user }}
+        job={{ tools_backup_job }}
+  tags:
+    - tools
+    - tools-backup
