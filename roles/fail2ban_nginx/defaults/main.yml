@@ -1,0 +1,68 @@
+---
+# Fail2ban packages
+fail2ban_pkgs:
+  - fail2ban
+
+# Fail2ban variables
+fail2ban_loglevel: 3
+fail2ban_logtarget: /var/log/fail2ban.log
+fail2ban_socket: /var/run/fail2ban/fail2ban.sock
+
+fail2ban_ignoreip: 127.0.0.1/8 {{ ip_whitelist }}
+fail2ban_bantime: 600
+fail2ban_maxretry: 6
+
+fail2ban_backend: polling
+
+fail2ban_destemail: canadensys.network@gmail.com
+fail2ban_banaction: iptables-multiport
+fail2ban_mta: sendmail
+fail2ban_protocol: tcp
+fail2ban_chain: INPUT
+
+fail2ban_action: action_
+
+fail2ban_services:
+  - name    : ssh
+    port    : ssh
+    banaction: ufw-ssh
+    filter  : sshd
+    logpath : /var/log/auth.log
+
+#  - name    : nginx-http
+#    port    : http,https
+#    filter  : nginx-http-auth
+#    logpath : /var/log/nginx/error.log
+
+  - name    : nginx-noscript
+    port    : http,https
+    filter  : nginx-noscript
+    logpath : /var/log/nginx/error.log
+    maxretry: 6
+
+  - name    : nginx-badbots
+    port    : http,https
+    filter  : nginx-badbots
+    logpath : /var/log/nginx/access.log
+    maxretry: 2
+
+  - name    : nginx-http
+    port    : http,https
+    filter  : nginx-http-auth2
+    logpath : /var/log/nginx/error.log
+
+  - name    : nginx-nohome
+    port    : http,https
+    filter  : nginx-nohome
+    logpath : /var/log/nginx/access.log
+    maxretry: 2
+
+  - name    : nginx-noproxy
+    port    : http,https
+    filter  : nginx-noproxy
+    logpath : /var/log/nginx/access.log
+    maxretry: 2
+#ip_whitelist        : '10.241.64.0/24 192.168.56.0/24'
+ip_whitelist        : '192.168.73.0/24'
+
+

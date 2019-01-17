@@ -31,6 +31,20 @@
   notify:
     - restart fail2ban
 
+- name: Add filters for fail2ban
+  become: true
+  template:
+    src: "{{ item }}.j2"
+    dest: /etc/fail2ban/filter.d/{{ item }}
+  with_items:
+    - nginx-http-auth2.conf
+    - nginx-nohome.conf
+    - nginx-noproxy.conf
+    - nginx-noscript.conf
+    - nginx-badbots.conf
+  notify:
+    - restart fail2ban
+
 - name: Ensure fail2ban starts on a fresh reboot
   become: true
   service:
