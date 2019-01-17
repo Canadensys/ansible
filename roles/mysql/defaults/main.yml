@@ -1,4 +1,6 @@
 ---
+
+apt_cache_valid_time: 3500
 # Mysql installed packages
 mysql_pkgs:
   - aptitude
@@ -10,7 +12,6 @@ mysql_pkgs:
   - python-pycurl
 
 # MySQL port
-# You shouldn't need to change this.
 mysql_port: 3306
 mysql_root_password: password
-vm_hostname: localhost
+mysql: mysql

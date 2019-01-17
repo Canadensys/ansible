@@ -8,6 +8,8 @@
     cache_valid_time: '{{ apt_cache_valid_time }}'
   with_items: '{{ mysql_pkgs }}'
   register: mysql_installed
+  tags:
+    - mysql
 
 - name: Ensure mysql starts on a fresh reboot
   become: true
@@ -15,6 +17,8 @@
     name    : mysql
     state   : started
     enabled : yes
+  tags:
+    - mysql
 
 # Change root default password
 - name: warn about using the default root user password
@@ -22,6 +26,8 @@
   debug:
     msg: "You are installing MySQL with a default root password of 'password'. Are you sure you want to do that? Specify a real password in your inventory file using the variable mysql_root_password."
   when: mysql_root_password is not defined
+  tags:
+    - mysql
 
 - name: change root user password on first run
   become: true
@@ -36,6 +42,8 @@
     #- "{{ vm_hostname }}"
     - localhost
   when: mysql_installed.changed
+  tags:
+    - mysql
 
 # Change conf file
 - name: Create Mysql configuration file
@@ -46,23 +54,29 @@
   notify:
     - restart mysql
   when: mysql_installed.changed
+  tags:
+    - mysql
   
 # Remove test database
 - name: Remove MySQL test database.
   become: true
   mysql_db:
     login_user: root
-    login_password: "{{ mysql_root_password }}"
+    login_password: "{{ mysql_root_password | default('password') }}"
     name    : 'test'
     state   : absent
   when: mysql_installed.changed
+  tags:
+    - mysql
 
 # Remove anonymous users
 - name: Remove anonymous MySQL users.
   become: true
   mysql_user:
     login_user: root
-    login_password: "{{ mysql_root_password }}"
+    login_password: "{{ mysql_root_password  | default('password') }}"
     name    : ''
     host_all: yes
     state   : absent
+  tags:
+    - mysql
