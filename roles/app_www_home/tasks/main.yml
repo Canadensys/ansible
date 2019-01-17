@@ -1,0 +1,39 @@
+---
+- name: Update apt cache
+  become: true
+  apt:
+    update_cache: yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  register: update_action
+ 
+- name: Install Github
+  become: true
+  apt:
+    pkg: '{{ item }}'
+    state: present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  with_items:
+    - 'git'
+
+- name: Download Layout from github
+  become: true
+  git:
+    repo: https://github.com/Canadensys/canadensys-layout.git
+    dest: '{{ app_files_d }}'
+    force: yes
+
+- name: Change the chmod file
+  become: true
+  file:
+    dest    : '{{ app_files_d }}'
+    mode    : u=rwX,g=rX,o=rX
+    recurse : yes
+
+- name: Add link owner directory
+  become: true
+  file:
+    src   : '{{ app_files_d }}'
+    dest  : '{{ app_webapps }}'
+    state : link
+
