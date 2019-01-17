@@ -40,3 +40,25 @@
 #- name: Add public key for user
 #  command: echo '{{ user_pub_key }}' | tee ~/.ssh/authorized_keys
 #  when: (user_pub_key is defined)
+
+#
+# OLD
+#
+#- name: Change root password
+#  user: name=root password="{{ root_password }}"
+#- name: Add deploy user
+#  user: name={{ deploy_user_name }} shell=/bin/bash append=yes password="{{ deploy_password }}"
+#- name: Add users
+#  user: name={{ item.value.name }} shell=/bin/bash append=yes password="{{ item.value.password }}"
+#  with_dict: "{{ users }}"
+# other option could be made during vagrant
+#- name: Add authorized keys for deploy user
+#  authorized_key: user={{ item.value.name }} key="{{ lookup('file', lookup('env','HOME') + '{{ item.value.keys }}') }}"
+#  become: yes
+#  with_dict: "{{ users }}"
+#
+#- name: Add canadensys user to sudoers
+#  lineinfile: dest=/etc/sudoers
+#              regexp="{{ deploy_user_name }} ALL"
+#              line="{{ deploy_user_name }} ALL=(ALL) ALL"
+#              state=present
