@@ -1,12 +1,12 @@
 ---
-- name: Install dropbox nautilus
-  become: true
-  apt:
-    pkg             : '{{ item }}'
-    state           : present
-    update_cache    : yes
-    cache_valid_time: '{{ apt_cache_valid_time }}'
-  with_items: '{{ dropbox_pkgs }}'
+#- name: Install dropbox nautilus
+#  become: true
+#  apt:
+#    pkg             : '{{ item }}'
+#    state           : present
+#    update_cache    : yes
+#    cache_valid_time: '{{ apt_cache_valid_time }}'
+#  with_items: '{{ dropbox_pkgs }}'
 
 - name: ufw - Allow dropbox traffic
   become: true
@@ -31,7 +31,6 @@
 
 #
 # Launch dropbox by hand ...
-# didn't find a way to do it by ansible
 #
 - name: Then ...
   shell: echo '- Connect to backup wm.\n- Run .dropbox-dist/dropboxd\n- Ctrl on the link\n- Connect the machine to the account\n- Exclude needed repository\n'
