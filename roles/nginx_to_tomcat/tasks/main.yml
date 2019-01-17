@@ -1,0 +1,16 @@
+---
+# Nginx
+- name: Nginx copy template from nginx to tomcat8
+  become: true
+  template:
+    src     : ./templates/app_nginx_to_tomcat.j2
+    dest    : /etc/nginx/sites-available/{{ app_c_name }}
+
+- name: Nginx activate website
+  become: true
+  file:
+    src   : /etc/nginx/sites-available/{{ app_c_name }}
+    dest  : /etc/nginx/sites-enabled/{{ app_c_name }}
+    state : link
+  notify: nginx reload
+

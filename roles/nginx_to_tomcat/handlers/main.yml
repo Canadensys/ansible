@@ -1,0 +1,13 @@
+---
+- name: nginx restart
+  become: true
+  service:
+    name    : '{{ nginx }}'
+    state   : restarted
+
+
+- name: nginx reload
+  become: true
+  service:
+    name    : '{{ nginx }}'
+    state   : reloaded

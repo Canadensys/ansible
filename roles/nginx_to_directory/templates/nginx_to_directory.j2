@@ -1,0 +1,20 @@
+# {{ ansible_managed }}
+
+server {
+  listen 80;
+  listen [::]:80;
+
+  root {{ app_webapps }};
+
+  access_log  /var/log/nginx/{{ app_domain }}.access.log;
+  error_log   /var/log/nginx/{{ app_domain }}.error.log;
+
+  index index.html index.htm index.nginx-debian.html;
+
+  server_name {{ app_domain }};
+
+  location /{% if app_ext != 'application_extension' %}{{ app_ext }}{% endif %} {
+    try_files $uri $uri/ =404;
+  }
+}
+

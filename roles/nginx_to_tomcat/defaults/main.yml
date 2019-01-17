@@ -1,0 +1,7 @@
+---
+# app_infos
+app_name      : application_name
+app_c_name    : 'dedicated_name'
+app_domain    : 'domaine_name_for_nginx'
+# directories
+app_files_d   : '/directory/where/appfiles/will/be/stored'
