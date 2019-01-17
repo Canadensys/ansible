@@ -1,9 +1,26 @@
-[vm_local_101]
+[vascan]
 192.168.56.102
 
-[vm_local_102]
-192.168.56.102
+[vascan_tools]
+192.168.0.2
 
-[vm_local_103]
-192.168.56.103
+[ipt]
+192.168.0.2
 
+[irbv_local]
+irbv-local
+
+[irbv_prod]
+irbv-prod
+
+[app2_vm]
+app2-vm
+
+[backup_vm]
+backup-vm
+
+[wiki_local]
+192.168.0.2
+
+[wordpress_local]
+192.168.0.2
