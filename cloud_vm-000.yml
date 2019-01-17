@@ -1,0 +1,34 @@
+---
+- name: Install Python 2
+  hosts: vm_000
+  become: true
+  gather_facts: False
+
+  vars_files:
+    - '../canadensys-inventories/cloud/vars_security_external.yml'
+
+  tasks:
+  - name: install python 2
+    raw: sudo bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)"
+
+- name: Install Entrance
+  hosts: vm_000
+  become: true
+
+  vars_files:
+    - '../canadensys-inventories/cloud/vars_common.yml'
+    - '../canadensys-inventories/cloud/vars_security_external.yml'
+    - '../canadensys-inventories/cloud/vars_vm-000.yml'
+    
+  roles:
+    - safe_upgrade
+    - first_install
+    - etc_hosts
+    - firewall
+    - fail2ban
+    - fail2ban_nginx
+    #- fail2ban_apache2
+    - log_watcher
+    - nginx
+    - http-https-forwarding
+    - ssh-forwarding

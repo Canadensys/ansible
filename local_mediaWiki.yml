@@ -1,0 +1,21 @@
+---
+- name: Install Mediawiki, PostgreSQL, Nginx, PHP-FPM, Mediawiki_deploy and backup
+  hosts: irbv_prod
+  #hosts: wiki_local
+  become: true
+  
+  vars_files:
+    - '../canadensys-inventories/local_servers/common.yml'
+    - '../canadensys-inventories/local_servers/vars_irbv-prod-wiki.yml'
+    #- '../canadensys-inventories/local_servers/vars_irbv-local-wiki.yml'
+    #- '../canadensys-inventories/local_servers/vars_wiki-local.yml'
+
+  roles:
+    - user
+    - postgresql
+    - nginx
+    - php_fpm
+    - sftp_jg
+    - backup_user
+    - mediawiki
+    - mediawiki_deploy

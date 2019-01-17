@@ -1,0 +1,23 @@
+---
+- name: Install Python 2
+  hosts: vm_100
+  become: true
+  gather_facts: False
+  tasks:
+  - name: install python 2
+    raw: sudo bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)"
+
+- name: Install VM Deployment
+  hosts: vm_100
+  become: true
+
+  vars_files:
+    - '../canadensys-inventories/canadensys/common.yml'
+
+  roles:
+    - safe_upgrade
+    - first_install
+    - etc_hosts
+    - firewall
+    - fail2ban
+    - log_watcher

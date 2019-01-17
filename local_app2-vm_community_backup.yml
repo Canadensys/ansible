@@ -1,0 +1,16 @@
+---
+- name: Install backup in app2-vm
+  hosts: app2_vm
+  become: true
+  
+  vars_files:
+    - '../canadensys-inventories/local_servers/common.yml'
+    - '../canadensys-inventories/local_servers/vars_app2-canadensys-community.yml'
+    - '../canadensys-inventories/local_servers/vars_app2-canadensys-ipt.yml'
+
+  roles:
+    - common
+    - backup_user_setting
+    - sftp_jg
+    - backup_user
+    - app2-vm_wordpress_backup

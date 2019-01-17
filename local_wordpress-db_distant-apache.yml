@@ -1,0 +1,14 @@
+---
+- name: Install WordPress, MySQL, Nginx, and PHP-FPM
+  hosts: app2_vm
+  become: true
+
+  vars_files:
+    - '../canadensys-inventories/local_servers/common.yml'
+    - '../canadensys-inventories/local_servers/vars_app2-canadensys-community.yml'
+
+  roles:
+    - user
+    - sftp_jg
+    - backup_user
+    - wordpress_external_db_apache2

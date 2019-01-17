@@ -1,0 +1,38 @@
+---
+# To do before lanching this playbook
+# $ ansible-galaxy install -r roles/roles_requirements.yml
+
+- name: Install Python 2
+  hosts: vascan
+  become: true
+  gather_facts: False
+
+  tasks:
+  - name: install python 2
+    raw: sudo bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)"
+
+- name: Install Vascan, Vascan Editor Tools
+  hosts: vascan
+  #hosts: vascan_tools
+  become: true
+
+  vars_files:
+    - '../canadensys-inventories/local_servers/vars_common.yml'
+    - '../canadensys-inventories/local_servers/vars_vascan-tools.yml'
+    #- '../canadensys-inventories/local_servers/vars_vascan-tools_no-nfs.yml'
+  
+  roles:
+    - safe_upgrade
+    - first_install
+    - etc_hosts
+    - firewall
+    - fail2ban
+    - log_watcher
+    - mysql
+    - tomcat8
+    - java_openJDK_8
+    # vascan_portal will install elasticsearch_0_90 
+    - app_vascan_portal
+    - app_vascan_editor
+    - app_tools
+    - jdauphant.nginx

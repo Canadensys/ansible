@@ -1,0 +1,28 @@
+---
+- name: Install Python 2
+  hosts: vms
+  become: true
+  gather_facts: False
+
+  vars_files:
+    - '../canadensys-inventories/cloud/vars_security_external.yml'
+
+  tasks:
+  - name: install python 2
+    raw: sudo bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)"
+
+- name: Install security for VM with an external link
+  hosts: vms
+  become: true
+  vars_files:
+    - '../canadensys-inventories/cloud/vars_common.yml'
+    - '../canadensys-inventories/cloud/vars_security_external.yml'
+    
+  roles:
+    - safe_upgrade
+    - first_install
+    - etc_hosts
+    - firewall
+    - fail2ban
+    - fail2ban_nginx
+    - log_watcher

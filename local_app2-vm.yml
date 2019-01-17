@@ -1,0 +1,33 @@
+---
+# To do before lanching this playbook
+# $ ansible-galaxy install -r roles/roles_requirements.yml
+- name: Install Canadensys applications
+  hosts: app2_vm
+  become: true
+
+  vars_files:
+    - '../canadensys-inventories/local_servers/common.yml'
+    - '../canadensys-inventories/local_servers/vars_vascan.yml'
+    - '../canadensys-inventories/local_servers/vars_vascan-editor.yml'
+    - '../canadensys-inventories/local_servers/vars_ipt.yml'
+    - '../canadensys-inventories/local_servers/vars_tools.yml'
+    - '../canadensys-inventories/local_servers/vars_vascan-tools-nginx.yml'
+  
+  roles:
+    - safe_upgrade
+    - first_install
+    - etc_hosts
+    - firewall
+    - fail2ban
+    - log_watcher
+    - mysql
+    - tomcat8
+    - java_openJDK_8
+    - app_vascan
+    # vascan_portal will install elasticsearch_0_90 
+    - nginx
+    - app_ipt
+    - app_vascan_portal
+    - app_vascan_editor
+    - app_tools
+    - jdauphant.nginx

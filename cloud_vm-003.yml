@@ -1,0 +1,35 @@
+---
+- name: Install Python 2
+  hosts: vm_003
+  become: true
+  gather_facts: False
+
+  vars_files:
+    - '../canadensys-inventories/cloud/vars_security_internal.yml'
+
+  tasks:
+  - name: install python 2
+    raw: sudo bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)"
+
+- name: Install IPT
+  hosts: vm_003
+  become: true
+
+  vars_files:
+    - '../canadensys-inventories/cloud/vars_common.yml'
+    - '../canadensys-inventories/cloud/vars_security_internal.yml'
+    - '../canadensys-inventories/cloud/vars_vm-003.yml'
+
+  roles:
+    - safe_upgrade
+    - first_install
+    - etc_hosts
+    - firewall
+    - nginx
+    - fail2ban
+    - fail2ban_nginx
+    - log_watcher
+    - tomcat8
+    - nfs_client
+    - app_ipt
+    - nginx_to_tomcat

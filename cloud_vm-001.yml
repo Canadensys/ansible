@@ -1,0 +1,31 @@
+---
+- name: Install Python 2
+  hosts: vm_001
+  become: true
+  gather_facts: False
+
+  vars_files:
+    - '../canadensys-inventories/cloud/vars_security_internal.yml'
+
+  tasks:
+  - name: install python 2
+    raw: sudo bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)"
+
+- name: Install NFS
+  hosts: vm_001
+  become: true
+
+  vars_files:
+    - '../canadensys-inventories/cloud/vars_common.yml'
+    - '../canadensys-inventories/cloud/vars_security_internal.yml'
+    - '../canadensys-inventories/cloud/vars_vm-001.yml'
+  
+  roles:
+    - safe_upgrade
+    - first_install
+    - etc_hosts
+    - firewall
+    - fail2ban
+    - log_watcher
+    - nfs_server
+    - mount_hdd

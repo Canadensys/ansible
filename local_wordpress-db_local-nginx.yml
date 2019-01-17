@@ -1,0 +1,17 @@
+---
+- name: Install WordPress, MySQL, Nginx, and PHP-FPM
+  hosts: wordpress_local
+  become: true
+
+  vars_files:
+    - '../canadensys-inventories/local_servers/common.yml'
+    - '../canadensys-inventories/local_servers/vars_wordpress-local.yml'
+
+  roles:
+    - user
+    - mysql
+    - nginx
+    - php_fpm
+    - sftp_jg
+    - backup
+    - wordpress_nginx_and_local_db
