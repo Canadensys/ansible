@@ -1,0 +1,88 @@
+---
+# Files
+- name: Ensures website dir exists
+  become: true
+  file:
+    path    : '{{ wp_final }}'
+    owner   : '{{ wp_user_name }}'
+    group   : '{{ wp_user_group }}'
+    state   : directory
+  
+- name: Test if $user is here
+  become: true
+  user:
+    name    : '{{ wp_user_name }}'
+    state   : present
+  register: wp_user_here
+  
+- name: Upload Wordpress files
+  become: true
+  copy:
+    src     : '{{ wp_src }}'
+    dest    : '{{ wp_zip }}'
+    force   : true
+
+- name: Extract WP archive
+  become: true
+  unarchive:
+    src : '{{ wp_zip }}'
+    dest: '{{ wp_final }}'
+    remote_src: yes
+
+- name: Fetch random salts for WordPress config
+  become: true
+  local_action: command curl https://api.wordpress.org/secret-key/1.1/salt/
+  register: wp_salt
+
+- name: WordPress config file
+  become: true
+  template:
+    src     : '{{ wp_config_file }}'
+    dest    : '{{ wp_final }}/wp-config.php'
+    force   : true
+
+- name: Change ownership of WordPress installation
+  become: true
+  file:
+    path    : '{{ wp_home }}'
+    owner   : '{{ wp_user_name }}'
+    group   : '{{ wp_user_group }}'
+    state   : directory
+    mode    : u+rwx,g+rws,o-rwx
+    recurse : yes
+
+# Mount in user home
+- name: Mount server in home user
+  become: true
+  mount:
+    name    : '{{ wp_user_web }}/{{ wp_name }}'
+    src     : '{{ wp_home }}'
+    fstype  : auto
+    opts    : bind
+    passno  : 2
+    state   : mounted
+
+# Backup
+- name: Copy backup script in crondir and executable
+  become: true
+  template:
+    src:    '{{ wp_backup_src }}'
+    dest:   '{{ wp_cron }}'
+    mode:   0754
+    owner   : '{{ bk_user }}'
+    group   : '{{ bk_group }}'
+
+- name: Creates weekly backup cronjob
+  become: true
+  cron: minute={{ item.value.cron_min }} hour={{ item.value.cron_hour }}
+        name={{ item.value.cron_name }}
+        cron_file={{ item.value.cron_file }}
+        user={{ item.value.user }}
+        job={{ wp_cron }}
+  with_dict: "{{ wp_backup_dict }}"
+
+- name: Restart programs
+  become: true
+  service: name='{{ item }}' state=restarted
+  with_items:
+    #- '{{ php }}'
