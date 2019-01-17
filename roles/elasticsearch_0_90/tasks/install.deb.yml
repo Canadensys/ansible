@@ -15,7 +15,7 @@
   register: version_exists
 
 - name: elasticsearch-install | Download deb
-  get_url: url={{elasticsearch_download_url}}/elasticsearch-{{elasticsearch_version}}.deb dest=/tmp/elasticsearch-{{elasticsearch_version}}.deb mode=0440
+  get_url: url={{elasticsearch_download_url}}/elasticsearch-{{elasticsearch_version}}.deb dest=/tmp/elasticsearch-{{elasticsearch_version}}.deb mode=0440 checksum={{elasticsearch_checksum}} validate_certs={{ elasticsearch_validate_certs | default('yes') }}
   when: not version_exists.stat.exists
 
 - name: elasticsearch-install | Install Elasticsearch
