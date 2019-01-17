@@ -8,3 +8,4 @@ postfix_pkgs:
     - ca-certificates
 # Postfix variables
 postfix_mailer_type : 'Internet Site'
+url_name: 'canadensys.net'

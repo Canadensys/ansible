@@ -16,7 +16,8 @@
            vtype='{{ item.vtype }}'
   with_items:
       #- { question: 'postfix/mailname', value: '{{ mail_name }}', vtype: 'string' }
-      - { question: 'postfix/mailname', value: '{{ ansible_fqdn }}', vtype: 'string' }
+      #- { question: 'postfix/mailname', value: '{{ ansible_fqdn }}', vtype: 'string' }
+      - { question: 'postfix/mailname', value: '{{ url_name }}', vtype: 'string' }
       - { question: 'postfix/main_mailer_type', value: '{{ postfix_mailer_type }}', vtype: 'string' }
 
 #add a postfix generic since our vm has no external hostname
@@ -30,50 +31,50 @@
     owner   : 'root'
     group   : 'root'
 
-- name: Set up Postfix config (smtp_generic_maps)
-  become: true
-  lineinfile:
-    state   : present
-    dest    : /etc/postfix/main.cf
-    line    : "smtp_generic_maps = hash:/etc/postfix/generic"
-    regexp  : "^smtp_generic_maps = .*$"
-  notify: restart postfix
+#- name: Set up Postfix config (smtp_generic_maps)
+#  become: true
+#  lineinfile:
+#    state   : present
+#    dest    : /etc/postfix/main.cf
+#    line    : "smtp_generic_maps = hash:/etc/postfix/generic"
+#    regexp  : "^smtp_generic_maps = .*$"
+#  notify: restart postfix
 
-- name: Set up Postfix config (relayhost)
-  become: true
-  lineinfile:
-    state   : present
-    dest    : /etc/postfix/main.cf
-    line    : "relayhost = smtp.umontreal.ca"
-    regexp  : "^relayhost = .*$"
-  notify: restart postfix
+#- name: Set up Postfix config (relayhost)
+#  become: true
+#  lineinfile:
+#    state   : present
+#    dest    : /etc/postfix/main.cf
+#    line    : "relayhost = smtp.umontreal.ca"
+#    regexp  : "^relayhost = .*$"
+#  notify: restart postfix
 
-- name: Set up Postfix config (mydomain)
-  become: true
-  lineinfile:
-    state   : present
-    dest    : /etc/postfix/main.cf
-    line    : "mydomain = localdomain"
-    regexp  : "^mydomain = .*$"
-  notify: restart postfix
+#- name: Set up Postfix config (mydomain)
+#  become: true
+#  lineinfile:
+#    state   : present
+#    dest    : /etc/postfix/main.cf
+#    line    : "mydomain = localdomain"
+#    regexp  : "^mydomain = .*$"
+#  notify: restart postfix
 
-- name: Set up Postfix config (myhostname)
-  become: true
-  lineinfile:
-    state   : present
-    dest    : /etc/postfix/main.cf
-    line    : "myhostname = localhost.localdomain"
-    regexp  : "^myhostname = .*$"
-  notify: restart postfix
+#- name: Set up Postfix config (myhostname)
+#  become: true
+#  lineinfile:
+#    state   : present
+#    dest    : /etc/postfix/main.cf
+#    line    : "myhostname = localhost.localdomain"
+#    regexp  : "^myhostname = .*$"
+#  notify: restart postfix
 
-- name: Set up Postfix config (myorigin)
-  become: true
-  lineinfile:
-    state   : present
-    dest    : /etc/postfix/main.cf
-    line    : "myorigin = $myhostname"
-    regexp  : "^myorigin = .*$"
-  notify: restart postfix
+#- name: Set up Postfix config (myorigin)
+#  become: true
+#  lineinfile:
+#    state   : present
+#    dest    : /etc/postfix/main.cf
+#    line    : "myorigin = $myhostname"
+#    regexp  : "^myorigin = .*$"
+#  notify: restart postfix
 
 - name: Set up Postfix config (myorigin)
   become: true
@@ -84,10 +85,19 @@
     regexp  : "^inet_interfaces = .*$"
   notify: restart postfix
 
-- name: Postmap Generic
+- name: Set up Postfix compatility level 2
   become: true
-  shell: postmap '/etc/postfix/generic'
+  lineinfile:
+    state   : present
+    dest    : /etc/postfix/main.cf
+    line    : "compatibility_level = 2"
+    regexp  : "^compatibility_level = .*$"
   notify: restart postfix
+
+#- name: Postmap Generic
+#  become: true
+#  shell: postmap '/etc/postfix/generic'
+#  notify: restart postfix
 
 - name: Ensure Postfix starts on a fresh reboot
   become: true
