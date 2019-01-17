@@ -11,3 +11,4 @@ psql_pkgs:
     - libpq-dev
     - python-psycopg2
     - php-pgsql
+# Psql variables
