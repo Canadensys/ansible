@@ -1,0 +1,159 @@
+---
+#
+#
+# Generic information
+#
+#
+
+canadensys_user : vm_user_name
+canadensys_grp  : vm_user_group
+
+# Directories
+nfs_root    : '/data'
+dir_root    : '/var/www/data.canadensys.net'
+dir_webapps : '{{ dir_root }}/webapps'
+## backup directory
+backup_root : '/Backups'
+## tmp deploy
+tmp_checkout_dir: '/tmp/vascan/checkout'
+
+# Tomcat
+tomcat_user     : tomcat8
+tomcat          : tomcat8
+tomcat8_webapps : '{{ dir_webapps }}' 
+tomcat8_maindir : '{{ dir_root }}'
+tomcat_webapps  : '{{ vascan_dir_root }}/webapps' 
+tomcat_maindir  : '{{ dir_root }}'
+
+# Java
+java_role     : 'java_openJDK_8'
+java_home_path: '/usr/lib/jvm/java-1.8.0-openjdk-amd64'
+
+# Google
+google_analytics_site_verification  : your_key
+google_analytics_account            : your_account
+
+# NGINX
+nginx_server_host: data.canadensys.net
+nginx_sites:
+  vascan:
+    - listen 80
+    - server_name {{ nginx_server_host }}
+    - root {{ vascan_dir_public }}
+    - 'location /vascan { 
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://localhost:8080/vascan/; 
+      }'
+    - 'location /sitemap/ {
+      }'
+    - 'location /common/ {
+      }'
+    - 'location /downloads/ {
+      }'
+
+# Attributes related to sources (on GitHub)
+source_dict:
+  data_access:
+    repo: https://github.com/Canadensys/canadensys-data-access.git
+    checkout_dir: '{{ tmp_checkout_dir }}/canadensys-data-access'
+    version: '{{ data_access_version }}'
+  vascan:
+    repo: https://github.com/Canadensys/vascan.git
+    checkout_dir: '{{ tmp_checkout_dir }}/vascan'
+    version: '{{ vascan_version }}'
+
+
+#
+#
+# VASCAN PORTAL
+#
+#
+
+vascan_portal_name      : 'vascan'
+vascan_portal_c_name    : 'canadensys_{{ vascan_portal_name }}'
+# Last release version. Mostly use to versionned web assets (e.g. css and js)
+# We normaly match the version with https://github.com/Canadensys/vascan/releases
+vascan_version: '3.5.6'
+data_access_version: '2.17.0'
+
+# Databases
+vascan_portal_db_name    : vascan_newprod
+vascan_portal_db_user    : user
+vascan_portal_db_password: password
+vascan_portal_db_host    : localhost
+vascan_portal_db_src     : 'mysqldump_vascan_portal_database.gz'
+vascan_portal_db_url     : 'https://www.dropbox.com/yourfile?dl=1'
+vascan_portal_db_dest    : '{{ tmp_checkout_dir }}'
+vascan_portal_db_zip     : '{{ tmp_checkout_dir }}/mysqldump_vascan_portal_database.gz'
+
+# NFS Directories
+vascan_portal_dir_nfs         : '{{ nfs_root }}/canadensys_vascan'
+vascan_portal_dir_nfs_public  : '{{vascan_portal_dir_nfs}}/public'
+vascan_portal_dir_nfs_data    : '{{vascan_portal_dir_nfs}}/vascan-data'
+
+# Directories
+vascan_portal_dir_root                : '{{ dir_root }}'
+
+vascan_portal_dir_public              : '{{ vascan_portal_dir_root }}/public'
+vascan_portal_dir_vascan_sitemap      : '{{ vascan_portal_dir_public }}/sitemap/vascan/'
+
+vascan_portal_dir_downloads           : '{{ vascan_portal_dir_public }}/downloads'
+vascan_portal_dir_downloadable_content: '{{ vascan_portal_dir_downloads }}/vascan'
+vascan_portal_dir_generated_content   : '{{ vascan_portal_dir_downloadable_content }}'
+
+vascan_portal_dir_data            : '{{ vascan_portal_dir_root }}/vascan-data'
+vascan_portal_dir_generated_images: '{{ vascan_portal_dir_data }}/generated_img'
+vascan_portal_dir_scripts         : '{{ vascan_portal_dir_nfs }}/scripts'
+
+vascan_portal_log_file: '{{ vascan_portal_dir_data }}/vascan.log'
+vascan_portal_log_api_usage: '{{ vascan_portal_dir_data }}/VascanAPIUsage.log'
+vascan_portal_log_refine_api_usage: '{{ vascan_portal_dir_data }}/VascanRefineAPIUsage.log'
+vascan_portal_last_publication_date: '{{ vascan_portal_dir_data }}/lastpublicationdate.txt'
+
+# ElasticSearch
+## used by the ElasticSearch role
+vascan_elasticsearch_plugins: 
+  - name: jdbc-river
+    url: http://bit.ly/1a8Mcve
+    dir: jdbc
+
+elastic_search:
+  host: 127.0.0.1
+  port: 9200
+  java_port: 9300
+  create_index: '{{ source_dict.data_access.checkout_dir }}/src/main/resources/script/vascan/vascan_index_creation.txt'
+
+elastic_search_rivers:
+  taxon:
+    sql: >
+       SELECT l1.taxonid as _id, l1.calname as taxonname, l1.calname as sortname, l1.calnamehtml as namehtml,
+       l1.calnamehtmlauthor as namehtmlauthor, l1.status, taxonomy.parentid, l2.calnamehtml AS parentnamehtml,
+       l1.rank as rankname FROM lookup l1 LEFT OUTER JOIN taxonomy on childid = taxonid LEFT OUTER JOIN lookup as l2
+       ON l2.taxonid = taxonomy.parentid
+    name: vascan_taxon_jdbc_river
+  vernacular:
+    sql: SELECT v.id AS _id, v.taxonid, name as vernacularname, name as sortname, s.status, language, calnamehtml AS taxonnamehtml FROM vernacularname v INNER JOIN status s on statusid = s.id INNER JOIN lookup ON lookup.taxonid=v.taxonid
+    name: vascan_vernacular_jdbc_river
+
+## used by the ElasticSearch River JDBC plugin
+mysql_java_connector_version: mysql-connector-java-5.1.31
+mysql_java_connector_url: 'https://dev.mysql.com/get/Downloads/Connector-J/{{ mysql_java_connector_version }}.zip'
+mysql_java_connector_jar: '{{ mysql_java_connector_version }}-bin.jar'
+
+# Root path of the log files produced by Vascan. Without trailing slash.
+vascan_log_file_root: '{{ vascan_dir_data }}'
+
+# Backup
+vascan_portal_backup_log_file : '{{ vascan_portal_dir_scripts }}/vascan_backup.log'
+vascan_portal_backup_name : 'Backup {{ vascan_portal_c_name }} (daily schedule)'
+vascan_portal_backup_file : '{{ vascan_portal_c_name }}-DailyBackups'
+vascan_portal_backup_day  : '*'
+vascan_portal_backup_hour : '3'
+vascan_portal_backup_min  : '30'
+vascan_portal_backup_user : '{{ canadensys_user }}'
+vascan_portal_backup_grp  : '{{ canadensys_grp }}'
+vascan_portal_backup_job  : '/usr/bin/python {{ vascan_portal_backup_d }}'
+vascan_portal_backup_s    : 'vascan_portal_backup.py.j2'
+vascan_portal_backup_d    : '{{ vascan_portal_dir_scripts }}/vascan_portal_backup.py'
+vascan_portal_backup_dir  : '{{ backup_root }}/{{ vascan_portal_c_name }}'

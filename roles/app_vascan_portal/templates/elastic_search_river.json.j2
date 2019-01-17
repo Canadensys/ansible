@@ -1,0 +1,14 @@
+{
+    "type" : "jdbc",
+    "jdbc" : {
+        "driver" : "com.mysql.jdbc.Driver",
+        "url" : "jdbc:mysql://{{ vascan_portal_db_host }}:3306/{{ vascan_portal_db_name }}?useUnicode=true&characterEncoding=utf8&haracterSetResults=utf8",
+        "user" : "{{ vascan_portal_db_user }}",
+        "password" : "{{ vascan_portal_db_password }}",
+        "sql" : "{{ item.value.sql }}",
+        "index" : "vascan",
+        "type" : "{{ item.key }}",
+        "bulk_size" : 500,
+        "max_bulk_requests" : 10
+    }
+}

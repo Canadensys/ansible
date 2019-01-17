@@ -1,0 +1,508 @@
+---
+#- debug:
+#    msg: "source_dict : {{ source_dict }}"
+
+# Create tmp directory
+- name: Create tmp deployment directory 
+  become: true
+  file:
+    path: '{{ tmp_checkout_dir }}'
+    state: directory
+  tags:
+    - portal
+    - portal-directories
+
+# Setup MySQL Database
+- name: Create databases in MySql
+  become: true
+  mysql_db:
+    name    : '{{ vascan_portal_db_name }}'
+    state   : present
+  tags:
+    - portal
+    - portal-database
+
+- name: Create database users
+  become: true
+  mysql_user:
+    name  : '{{ vascan_portal_db_user }}'
+    password: '{{ vascan_portal_db_password }}'
+    priv  : '{{ vascan_portal_db_name }}.*:ALL'
+    host  : '{{ vascan_portal_db_host }}'
+    state : present
+    append_privs : yes
+  tags:
+    - portal
+    - portal-database
+
+## Upload backuped database
+- name: Upload backup files
+  become: true
+  copy:
+    src     : '{{ vascan_portal_db_src }}'
+    dest    : '{{ vascan_portal_db_zip }}'
+  register: stat_bk_vascan_portal_db
+  ignore_errors: yes
+  tags:
+    - portal
+    - portal-database
+
+#- name: Debug vascan
+#  debug:
+#    msg: '{{stat_bk_vascan_portal_db}}'
+#  tags:
+#    - portal
+#    - portal-database
+
+- name: Download database from Dropbox
+  become: true
+  shell: "wget -O {{ vascan_portal_db_zip }} {{ vascan_portal_db_url }}"
+  when : vascan_portal_db_url is defined and stat_bk_vascan_portal_db.failed
+  tags:
+    - portal
+    - portal-database
+
+- name: Restore MySQL Database from file
+  become: true
+  mysql_db:
+    name    : '{{ vascan_portal_db_name }}'
+    state   : import
+    target  : '{{ vascan_portal_db_zip }}'
+  notify: restart mysql
+  tags:
+    - portal
+    - portal-database
+
+## Test database
+- name: Retrieve Taxon count from MySQL
+  command: >
+    mysql -u{{ vascan_portal_db_user }} -p{{ vascan_portal_db_password }} {{ vascan_portal_db_name }}
+    --skip-column-names --silent
+    -e"SELECT count(*) from taxon"
+  register: mysql_taxon_count
+  no_log: true
+  changed_when: False
+  tags:
+    - portal
+    - portal-database
+
+- name: Retrieve Vernacular count from MySQL
+  command: >
+    mysql -u{{ vascan_portal_db_user }} -p{{ vascan_portal_db_password }} {{ vascan_portal_db_name }}
+    --skip-column-names --silent
+    -e"SELECT count(*) from vernacularname"
+  register: mysql_vernacular_count
+  no_log: true
+  changed_when: False
+  tags:
+    - portal
+    - portal-database
+    
+# Setup directories
+## is it on nfs
+- name: Set is on nfs to false
+  set_fact:
+    is_on_nfs: false
+  tags:
+    - portal
+    - portal-directories
+
+- name: Set is on nfs if vascan_portal_nfs exist and vascan_portal_nfs != vascan_portal_dir
+  set_fact:
+    is_on_nfs: true
+  when : vascan_portal_nfs is defined and not (vascan_portal_nfs == vascan_portal_dir)
+  tags:
+    - portal
+    - portal-directories
+
+- name: Set vascan_portal_nfs if is not on nfs
+  set_fact:
+    vascan_portal_nfs: '{{ vascan_portal_dir }}'
+  when: not is_on_nfs
+  tags:
+    - portal
+    - portal-directories
+
+## Setup webapp directory
+- name: Create webapp directory
+  become: true
+  file:
+    path: '{{ tomcat_webapps }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  tags:
+    - portal
+    - portal-directories
+
+- name: Create portal directory
+  become: true
+  file:
+    path  : '{{ vascan_portal_dir }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  when: is_on_nfs
+  tags:
+    - portal
+    - portal-directories
+
+- name: Create portal directory not NFS
+  become: true
+  file:
+    path  : '{{ item }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  with_items:
+    - '{{ vascan_portal_dir_public }}'
+    - '{{ vascan_portal_dir_data }}'
+  when: not is_on_nfs
+  tags:
+    - portal
+    - portal-directories
+
+## Setup NFS directories
+- name: Create nfs directory
+  become: true
+  file:
+    path  : '{{ vascan_portal_nfs }}'
+    state : directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  when: is_on_nfs
+  tags:
+    - portal
+    - portal-directories
+
+- name: Create Vascan shared directories
+  become: true
+  file:
+    path: '{{ item }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  with_items:
+    - '{{ vascan_portal_nfs_public }}'
+    - '{{ vascan_portal_nfs_data }}'
+  when: is_on_nfs
+  tags:
+    - portal
+    - portal-directories
+  
+- name: Link nfs and root directory
+  become: true
+  file:
+    src   : '{{ item.src }}'
+    dest  : '{{ item.dest }}'
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+    state : link
+  loop:
+    - { src: '{{ vascan_portal_nfs_public }}', dest: '{{ vascan_portal_dir_public }}' }
+    - { src: '{{ vascan_portal_nfs_data }}', dest: '{{ vascan_portal_dir_data }}' }
+  when: is_on_nfs
+  tags:
+    - portal
+    - portal-directories
+
+## create other directories
+- name: Prepare Vascan portal directory structure
+  become: true
+  file:
+    path: '{{ item }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  with_items:
+    - '{{ vascan_portal_dir_downloads }}'
+    - '{{ vascan_portal_dir_downloadable_content }}'
+    - '{{ vascan_portal_dir_generated_images }}'
+    - '{{ vascan_portal_dir_generated_content }}'
+  tags:
+    - portal
+    - portal-directories
+
+# Setup webapp and dependencies
+- name: Install Maven
+  become: true
+  apt:
+    pkg: maven
+    state: present
+    update_cache    : yes
+  tags:
+    - portal
+    - portal-webapp
+
+- name: Install jq (lightweight and flexible command-line JSON processor)
+  become: true
+  apt:
+    pkg: jq
+    state: present
+    update_cache    : yes
+  tags:
+    - portal
+    - portal-webapp
+
+- name: Clone Vascan and dependencies (canadensys-data-access)
+  git:
+    repo: '{{ item.value.repo }}'
+    dest: '{{ item.value.checkout_dir }}'
+    version: '{{ item.value.version }}'
+    depth: 1
+  with_dict: '{{ source_dict }}'
+  tags:
+    - portal
+    - portal-webapp
+
+- name: Build canadensys-data-access locally
+  become: true
+  command: mvn install -Dmaven.test.skip=true --batch-mode 
+  args:
+    chdir: '{{ source_dict.data_access.checkout_dir }}'
+  tags:
+    - portal
+    - portal-webapp
+
+- name: Create Vascan config
+  template:
+     src: vascan-config.properties.j2
+     dest: '{{ source_dict.vascan.checkout_dir }}/config/production/vascan-config.properties'
+  tags:
+    - portal
+    - portal-webapp
+
+- name: Create Vascan log4j config
+  template:
+    src     : 'vascan_log4j.xml.j2'
+    dest    : '{{ source_dict.vascan.checkout_dir }}/src/main/resources/log4j.xml'
+  tags:
+    - portal
+    - portal-webapp
+
+- name: Build Vascan (without running tests)
+  shell: ./gradlew clean buildProductionQuiet -x test
+  args:
+    chdir: '{{ source_dict.vascan.checkout_dir }}'
+  tags:
+    - portal
+    - portal-webapp
+
+# Setup elasticsearch
+- name: Install unzip
+  become: true
+  apt:
+    pkg: unzip
+    state: present
+    update_cache    : yes
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Download and extract MySql Java Connector for ElasticSearch River plugin
+  unarchive:
+    src: '{{ mysql_java_connector_url }}'
+    dest: '{{ tmp_dest }}'
+    remote_src: yes
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Move MySQL Java Connector for ElasticSearch River plugin
+  copy:
+    remote_src: yes
+    src     : '{{ tmp_dest }}/{{ mysql_java_connector_version }}/{{ mysql_java_connector_jar }}'
+    dest    : '{{ elasticsearch_plugindir }}/jdbc-river'
+    owner   : '{{ elasticsearch_user }}'
+    group   : '{{ elasticsearch_user }}'
+  tags:
+    - portal
+    - portal-elasticsearch
+
+# using curl since posting a file is not supported by the uri module
+- name: Create ElasticSearch Index
+  shell: 'curl  -XPOST -s "{{ elastic_search.host }}:{{ elastic_search.port }}/vascan" \
+                -d @{{ elastic_search.create_index }}'
+  args:
+    warn: false
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Retrieve counts from ElasticSearch
+  shell: >
+    curl -XGET -s {{ elastic_search.host }}:{{ elastic_search.port }}/vascan/{{ item.key }}/_count | jq .count
+  register: es_count_output
+  with_dict: '{{ elastic_search_rivers }}'
+  changed_when: False
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Creating the dict for ElasticSearch counts
+  set_fact:
+    es_counts: "{{ es_counts|default({}) | combine({item.item.key: item.stdout }) }}"
+  with_items:
+    - "{{ es_count_output.results }}"
+  changed_when: False
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Prepare ElasticSearch Rivers files
+  template:
+     src: elastic_search_river.json.j2
+     dest: '{{ tmp_dest }}/es_river_{{ item.key }}.json'
+  with_dict: '{{ elastic_search_rivers }}'
+  tags:
+    - portal
+    - portal-elasticsearch
+
+# using curl since posting a file is not supported by the uri module
+- name: Create ElasticSearch Taxon River
+  shell: 'curl  -XPOST -s "{{ elastic_search.host }}:{{ elastic_search.port }}/_river/{{ elastic_search_rivers.taxon.name }}/_meta" \
+                -d @{{ tmp_dest }}/es_river_taxon.json'
+  args:
+    warn: false
+  when: es_counts['taxon']|int == 0
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Waiting until ElasticSearch Taxon count is matching MySQL (retry is expected here)
+  shell: curl -XGET -s {{ elastic_search.host }}:{{ elastic_search.port }}/vascan/taxon/_count | jq .count
+  register: current_taxon_count
+  when: es_counts['taxon']|int == 0
+  until: current_taxon_count.stdout|int == mysql_taxon_count.stdout|int
+  delay: 5
+  retries: 15
+  ignore_errors: yes
+  tags:
+    - portal
+    - portal-elasticsearch
+  
+- name: Fix value
+  set_fact: 
+    current_taxon_count: "{{ current_taxon_count|combine({'stdout': mysql_taxon_count.stdout}) }}"
+  when: current_taxon_count.skipped is defined
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Restart service elasticsearch, in all cases
+  service:
+    name: elasticsearch
+    state: restarted
+  when: current_taxon_count.stdout|int != mysql_taxon_count.stdout|int
+  tags:
+    - portal
+    - portal-elasticsearch
+  
+- name: The river doesn't start 
+  fail: msg="Elsaticsearch has been restart=ed. Please relaunch this playbook."
+  when: current_taxon_count.stdout|int != mysql_taxon_count.stdout|int
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Remove ElasticSearch Taxon River
+  shell: 'curl  -XDELETE -s {{ elastic_search.host }}:{{ elastic_search.port }}/_river/{{ elastic_search_rivers.taxon.name }}/'
+  args:
+    warn: false
+  when: es_counts['taxon']|int == 0
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Create ElasticSearch Vernacular River
+  shell: 'curl  -XPOST -s "{{ elastic_search.host }}:{{ elastic_search.port }}/_river/{{ elastic_search_rivers.vernacular.name }}/_meta" \
+                -d @{{ tmp_dest }}/es_river_vernacular.json'
+  args:
+    warn: false
+  when: es_counts['vernacular']|int == 0
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Waiting until ElasticSearch Vernacular count is matching MySQL (retry is expected here)
+  shell: curl -XGET -s {{ elastic_search.host }}:{{ elastic_search.port }}/vascan/vernacular/_count | jq .count
+  register: current_vernacular_count
+  when: es_counts['vernacular']|int == 0
+  until: current_vernacular_count.stdout|int == mysql_vernacular_count.stdout|int
+  delay: 5
+  retries: 25
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Remove ElasticSearch Vernacular River
+  shell: 'curl  -XDELETE -s {{ elastic_search.host }}:{{ elastic_search.port }}/_river/{{ elastic_search_rivers.vernacular.name }}'
+  args:
+    warn: false
+  when: es_counts['vernacular']|int == 0
+  tags:
+    - portal
+    - portal-elasticsearch
+
+# Install webapp
+- name: Move Vascan WAR to Tomcat
+  become: true
+  copy:
+    remote_src: yes
+    src     : '{{ source_dict.vascan.checkout_dir }}/build/libs/vascan-{{ vascan_version }}.war'
+    dest    : '{{ tomcat_webapps }}/vascan.war'
+    owner   : '{{ tomcat_user }}'
+  notify: restart tomcat
+  tags:
+    - portal
+    - portal-webapp
+
+# Setup Backup
+- name: Prepare Vascan Portal Backup Cron directory structure
+  become: true
+  file: 
+    path  : "{{ item }}"
+    owner : '{{ vascan_portal_backup_user }}'
+    group : '{{ vascan_portal_backup_grp }}'
+    state : directory
+  with_items:
+    - '{{ vascan_portal_dir_scripts }}'
+    - '{{ vascan_portal_backup_dir }}'
+  tags:
+    - portal
+    - portal_backup
+
+- name: Prepare Vascan Portal Log File
+  become: true
+  file: 
+    path  : "{{ item }}"
+    owner : '{{ vascan_portal_backup_user }}'
+    group : '{{ vascan_portal_backup_grp }}'
+    state : touch
+  with_items:
+    - '{{ vascan_portal_backup_log_file }}'
+  tags:
+    - portal
+    - portal_backup
+
+- name: Copy backup script in crondir and execute
+  become: true
+  template:
+    src   : '{{ vascan_portal_backup_s }}'
+    dest  : '{{ vascan_portal_backup_d }}'
+    mode  : 0500
+    owner : '{{ vascan_portal_backup_user }}'
+  tags:
+    - portal
+    - portal_backup
+
+- name: Creates minutes checker cronjob
+  become: true
+  cron: minute={{ vascan_portal_backup_min }} hour={{ vascan_portal_backup_hour }}
+        name={{ vascan_portal_backup_name }}
+        cron_file={{ vascan_portal_backup_file }}
+        user={{ vascan_portal_backup_user }}
+        job={{ vascan_portal_backup_job }}
+  tags:
+    - portal
+    - portal_backup

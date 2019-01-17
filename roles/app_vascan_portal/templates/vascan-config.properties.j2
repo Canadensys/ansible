@@ -1,0 +1,24 @@
+googleanalytics.siteVerification={{ google_analytics_site_verification }}
+googleanalytics.account={{ google_analytics_account }}
+feedback.url=http://data.canadensys.net/vascan/feedback
+
+url.useMinified=true
+
+lastPublicationDateFilePath= {{ vascan_portal_last_publication_date }}
+taxonUrl=http://data.canadensys.net/vascan/taxon/
+
+generatedContent.publicDownloadUrl=http://data.canadensys.net/downloads/vascan/
+generatedContent.imageFolder={{ vascan_portal_dir_generated_images }}/
+generatedContent.generatedFilesFolder={{ vascan_portal_dir_generated_content }}/
+
+database.driver=com.mysql.jdbc.Driver
+database.url=jdbc:mysql://{{ vascan_portal_db_host }}/{{ vascan_portal_db_name }}?useUnicode=true&amp;characterEncoding=utf8&amp;characterSetResults=utf8
+database.user={{ vascan_portal_db_user }}
+database.password={{ vascan_portal_db_password }}
+database.idleConnectionTestPeriod=60
+hibernate.dialect=org.hibernate.dialect.MySQLDialect
+hibernate.show_sql=false
+hibernate.jdbc.fetch_size=1000
+
+elasticsearch.host={{ elastic_search.host }}
+elasticsearch.port={{ elastic_search.java_port }}

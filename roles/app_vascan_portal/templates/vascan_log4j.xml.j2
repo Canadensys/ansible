@@ -11,7 +11,7 @@
 	</appender>
 
 	<appender name="vascanLogFile" class="org.apache.log4j.RollingFileAppender">
-		<param name="file" value="{{ vascan_log_file_root }}/vascan.log"/>
+		<param name="file" value="{{ vascan_portal_log_file }}"/>
 		<param name="Threshold" value="WARN" />
 		<param name="MaxFileSize" value="1MB" />
 		<!-- Keep one backup file -->
@@ -22,7 +22,7 @@
 	</appender>
 	
 	<appender name="apiUsageAppender" class="org.apache.log4j.RollingFileAppender"> 
-		<param name="file" value="{{ vascan_log_file_root }}/VascanAPIUsage.log"/>
+		<param name="file" value="{{ vascan_portal_log_api_usage }}"/>
 		<param name="MaxFileSize" value="1MB"/>
 		<!-- Keep one backup file -->
 		<param name="MaxBackupIndex" value="1"/>
@@ -36,7 +36,7 @@
 	</appender>
 	
 	<appender name="refineApiUsageAppender" class="org.apache.log4j.RollingFileAppender"> 
-		<param name="file" value="{{ vascan_log_file_root }}/VascanRefineAPIUsage.log"/>
+		<param name="file" value="{{ vascan_portal_log_refine_api_usage }}"/>
 		<param name="MaxFileSize" value="1MB"/>
 		<!-- Keep one backup file -->
 		<param name="MaxBackupIndex" value="1"/>
