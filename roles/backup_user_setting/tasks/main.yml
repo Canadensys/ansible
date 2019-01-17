@@ -1,0 +1,8 @@
+---
+- name: Set parameters
+  set_fact:
+    user_name   : '{{ bk_user }}'
+    user_group  : '{{ bk_group }}'
+    user_home   : '{{ bk_home }}'
+    user_pub_key: '{{ bk_rsa_pub }}'
+  
