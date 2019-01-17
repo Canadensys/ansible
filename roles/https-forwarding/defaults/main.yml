@@ -1,0 +1,37 @@
+---
+forwarding_dict:
+  vm-namex:
+    name      : vm-namex
+    ip        : vm-ipx
+    desc      : vm-descriptionx
+    port      : vm-portx
+    sub_domain: vm_sub_domain
+    
+  vm-namey:
+    name      : vm-namey
+    ip        : vm-ipy
+    desc      : vm-descriptiony
+    port      : vm-porty
+    sub_domain: vm_sub_domain
+
+upstream:
+  - name: vm-namex
+    ip  : vm-ipx
+    port: vm-portx
+  
+  - name: vm-namey
+    ip  : vm-ipy
+    port: vm-porty
+
+  - name: vm-namet
+    ip  : vm-ipt
+    port: vm-portt
+    
+main_domain     : the_main_domain
+pem_dhparams    : dhparams_file
+private_key_dir : private_key
+pem_key_name    : pem_key_file
+csr_key_name    : csr_key_file
+crt_key_name    : crt_key_file
+nginx_available : directory_for_available_websites
+nginx_enable    : directory_for_enable_websites

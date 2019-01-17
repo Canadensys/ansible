@@ -1,0 +1,26 @@
+---
+- name: ufw allow forwarding
+  become: true
+  replace:
+    backup  : true
+    path    : /etc/default/ufw
+    regexp  : '^DEFAULT_FORWARD_POLICY="DROP"'
+    replace : '#DEFAULT_FORWARD_POLICY="DROP"\nDEFAULT_FORWARD_POLICY="ACCEPT"'
+
+- name: ufw allow ip-4 forwarding
+  become: true
+  replace:
+    backup  : true
+    path    : /etc/ufw/sysctl.conf
+    regexp  : '^#net/ipv4/ip_forward=1'
+    replace : 'net/ipv4/ip_forward=1'
+  notify: restart ufw
+  
+- name: ufw add forwarding rules
+  become: true
+  replace:
+    backup  : true
+    path    : /etc/ufw/before.rules
+    regexp  : "^#   ufw-before-forward\n#\n(.*\n)*# Don't delete these required lines, otherwise there will be errors\n"
+    replace : '{{ ssh_forwarding }}'
+  notify: restart ufw

@@ -1,0 +1,121 @@
+---
+
+#- name: show values
+#  debug: msg="{{ item.value }}"
+#  with_dict: '{{ forwarding_dict }}'
+
+- name: Update apt cache
+  become: true
+  apt: update_cache=yes cache_valid_time=3600
+
+- name: Install required software
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - openssl
+    - python-openssl
+ 
+- name: Generate a dhparams file
+  become: true
+  openssl_dhparam:
+    path: '{{ pem_dhparams }}'
+    size: 2048
+
+- name: Create directory
+  become: true
+  file:
+    path  : '{{ private_key_dir }}'
+    state : directory
+
+- name: Generate an OpenSSL private key.
+  become: true
+  openssl_privatekey:
+    path: '{{ private_key_dir }}/{{ pem_key_name }}'
+
+- name: Generate an OpenSSL CSR.
+  become: true
+  openssl_csr:
+    path: '{{ private_key_dir }}/{{ csr_key_name }}'
+    privatekey_path: '{{ private_key_dir }}/{{ pem_key_name }}'
+    common_name: '{{ main_domain }}'
+
+- name: Generate a Self Signed OpenSSL certificate
+  become: true
+  openssl_certificate:
+    path            : '{{ private_key_dir }}/{{ crt_key_name }}'
+    privatekey_path : '{{ private_key_dir }}/{{ pem_key_name }}'
+    csr_path        : '{{ private_key_dir }}/{{ csr_key_name }}'
+    provider        : selfsigned
+  
+# prepare upstream file  
+- name: Nginx upstream copy file
+  become: true
+  template:
+    src   : ./templates/http_upstream_definitions.j2
+    dest  : '{{ nginx_available }}/upstreamDefinitions'
+    force : true
+    
+- name: Nginx upstream add servers
+  become: true
+  blockinfile:
+    state   : present
+    dest    : '{{ nginx_available }}/upstreamDefinitions'
+    block: |
+      upstream {{ item.name }}  {
+        server {{ ipLocal }}{{ item.ip }}{% if item.port is defined %}:{{ item.port }}{% endif %};
+      }
+    marker: "# {mark} ANSIBLE MANAGED BLOCK for {{ item.name }}"
+    marker_begin: "START "
+    marker_end: "END "
+  with_items: '{{ upstream }}'
+
+- name: Nginx upstream activate upstream
+  become: true
+  file:
+    src   : '{{ nginx_available }}/upstreamDefinitions'
+    dest  : '{{ nginx_enabled }}/upstreamDefinitions'
+    state : link
+  notify: reload nginx
+
+# Prepare forwarding files
+- name: Nginx copy http forwarding file
+  become: true
+  template:
+    src    : ./templates/http-https-forwarding.j2
+    dest   : '{{ nginx_available }}/{{ file_name_start }}{{ item.value.sub_domain }}'
+    force : true
+  with_dict: '{{ forwarding_dict }}'
+
+# Prepare forwarding files content
+- name: Nginx logger file
+  become: true
+  blockinfile:
+    state   : present
+    dest    : '{{ nginx_available }}/{{ file_name_start }}{{ item.value.sub_domain }}'
+    block: |
+      #
+        location /{% if item.value.vm_ext is defined %}{{ item.value.vm_ext }}{% endif %} {
+          proxy_pass  http://{{ item.value.name }};
+          proxy_read_timeout 800;
+          proxy_redirect   off;
+          proxy_buffering  off;
+          proxy_set_header Host            {{ item.value.sub_domain }}.{{ main_domain }};
+          proxy_set_header X-Real-IP       $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto https;
+        }
+    marker      : "# {mark} ANSIBLE MANAGED BLOCK for {{ item.value.name }}"
+    marker_begin: "START "
+    marker_end  : "END "
+    insertafter : '############'
+  with_dict: '{{ forwarding_dict }}'
+  notify: reload nginx
+
+- name: Nginx upstream activate upstream
+  become: true
+  file:
+    src   : '{{ nginx_available }}/{{ file_name_start }}{{ item.value.sub_domain }}'
+    dest  : '{{ nginx_enabled }}/{{ file_name_start }}{{ item.value.sub_domain }}'
+    state : link
+  with_dict: '{{ forwarding_dict }}'
+  notify: reload nginx

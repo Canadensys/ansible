@@ -1,0 +1,56 @@
+# {{ ansible_managed }}
+## START {{ item.value.sub_domain }}.{{ main_domain }} ##
+server {
+  listen         80;
+  server_name    {% if item.value.sub_domain == 'www' %}{{ main_domain }}{% endif %} {{ item.value.sub_domain }}.{{ main_domain }};
+  rewrite ^(.*) https://$server_name$1 permanent;
+  #return       301 https://$server_name$request_uri;
+}
+
+{% if item.sub_domain == 'www' %}
+server {
+  listen 443 ssl spdy;
+  server_name {{ main_domain }};
+  rewrite ^(.*) https://$server_name$1 permanent;
+  
+  ssl on;
+  ssl_certificate      {{ private_key_dir }}{{ crt_key_name }};
+  ssl_certificate_key  {{ private_key_dir }}{{ pem_key_name}};
+}
+{% endif %}
+
+server {
+  listen        443 ssl;
+  server_name   {{ item.value.sub_domain }}.{{ main_domain }};
+  
+  access_log  off;
+  error_log   /var/log/nginx/{{ item.value.sub_domain }}.{{ main_domain }}.error.log;
+
+  client_max_body_size 10G;
+  
+  ssl                  on;
+  ssl_certificate      {{ private_key_dir }}{{ crt_key_name }};
+  ssl_certificate_key  {{ private_key_dir }}{{ pem_key_name}};
+
+  ssl_prefer_server_ciphers on;
+  ssl_session_timeout 1d;
+  ssl_session_cache shared:SSL:50m;
+  ssl_session_tickets off;
+
+  # add Strict-Transport-Security to prevent man in the middle attacks
+  add_header Strict-Transport-Security "max-age=31536000" always; 
+
+  # Diffie-Hellman parameter for DHE ciphersuites, recommended 2048 bits
+  ssl_dhparam {{ pem_dhparams }};
+
+  # intermediate configuration. tweak to your needs.
+  ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+  ssl_ciphers HIGH:!aNULL:!MD5;
+
+  location /robots.txt {
+    alias /var/www/robots/robots.txt ;
+  }
+  
+  ############
+
+}

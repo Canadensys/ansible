@@ -1,0 +1,75 @@
+---
+- name: Update apt cache
+  become: true
+  apt:
+    update_cache: yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  register: update_action
+ 
+- name: Install {{ nfs_client_pkg }} packages ubuntu
+  become: true
+  apt:
+    pkg: '{{ nfs_client_pkg }}'
+    state: present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+
+- name: Creates directory
+  become: true
+  file:
+    path  : '{{ nfs_client_path }}'
+    state : directory
+
+- name: Change owner directory
+  become: true
+  file:
+    path  : '{{ nfs_client_path }}'
+    owner : '{{ nfs_client_user }}'
+    group : '{{ nfs_client_grp }}'
+    mode  : 0755
+
+- name: Check if Service Exists
+  stat: path=/etc/init.d/tomcat8
+  register: service_status
+
+- name: Stop Service
+  service: name=tomcat8 state=stopped
+  when: service_status.stat.exists
+  register: service_stopped
+    
+- name: Check if Service Exists
+  stat: path=/etc/init.d/tomcat7
+  register: service_status
+
+- name: Stop Service
+  service: name=tomcat7 state=stopped
+  when: service_status.stat.exists
+  register: service_stopped
+    
+- name: Unmount nfs
+  become: true
+  mount:
+    path: '{{ nfs_client_path }}'
+    src: '{{ nfs_server_ip }}:{{ nfs_server_path }}'
+    opts: '{{ nfs_client_mount_opts }}'
+    fstype: '{{ nfs_client_mount_fstype}}'
+    state: unmounted
+  ignore_errors: yes
+  
+- name: remount nfs
+  become: true
+  mount:
+    path: '{{ nfs_client_path }}'
+    src: '{{ nfs_server_ip }}:{{ nfs_server_path }}'
+    opts: '{{ nfs_client_mount_opts }}'
+    fstype: '{{ nfs_client_mount_fstype}}'
+    state: present
+
+- name: Mount nfs
+  become: true
+  mount:
+    path: '{{ nfs_client_path }}'
+    src: '{{ nfs_server_ip }}:{{ nfs_server_path }}'
+    opts: '{{ nfs_client_mount_opts }}'
+    fstype: '{{ nfs_client_mount_fstype}}'
+    state: mounted

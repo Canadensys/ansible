@@ -1,0 +1,89 @@
+---
+# There is probably a weird results due to the cloud. For the first shot, the mounted hdd is 2TB with a cloud system
+# /dev/vdb1 contains a ext4 file system labelled 'cloudimg-rootfs'
+# sudo mkfs.ext4 /dev/vdb1 force the problem to 14TB
+
+- name: Erase the hdd connected
+  pause:
+    prompt: "Do you want to erase the hdd (yes/no)?"
+  register: erase_answer
+
+- name: Sure confirm with consequences
+  pause:
+    prompt: "Do you REALLY want to erase the hdd (yes/no)? (it will remove every content on hdd)"
+  register: erase_answer
+  when: erase_answer.user_input | bool
+
+- name: Set erase_hdd as NO
+  set_fact:
+    erase_hdd: "no"
+  when: erase_answer.user_input is undefined
+
+- name: Set erase_hdd as YES
+  set_fact:
+    erase_hdd: "yes"
+  when: (erase_answer.user_input is defined) and (erase_answer.user_input | bool)
+
+- name: Update apt cache
+  become: true
+  apt:
+    update_cache: yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  register: update_action
+ 
+- name: Install Parted packages ubuntu
+  become: true
+  apt:
+    pkg   : '{{ parted }}'
+    state : present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+
+- name: Umount partition
+  become: true
+  mount:
+    src: '{{ dev_part }}1'
+    path: /ext_data
+    state: absent
+  when: erase_hdd
+
+- name: Create partition
+  become: true
+  parted:
+    label : gpt
+    device: '{{ dev_part }}'
+    number: 1
+    state : present
+  when: erase_hdd
+
+- name: Format partition
+  become: true
+  filesystem:
+    fstype: ext4
+    dev: '{{ dev_part }}1'
+    force: yes
+  when: erase_hdd
+
+- name: Mount partition
+  become: true
+  mount:
+    fstype: ext4
+    src: '{{ dev_part }}1'
+    path: /ext_data
+    state: mounted
+  when: erase_hdd
+
+- name: Creates directory
+  become: true
+  file:
+    path  : '/ext_data/data'
+    state : directory
+  when: erase_hdd
+
+- name: Change owner directory
+  become: true
+  file:
+    path  : /ext_data/data
+    owner : nobody
+    group : nogroup
+    mode  : 0755

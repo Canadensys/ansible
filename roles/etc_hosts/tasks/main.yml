@@ -1,0 +1,23 @@
+---
+- name: Copy hosts file
+  become: true
+  template:
+    src     : ./templates/hosts.j2
+    dest    : /etc/hosts
+
+- name: Update localhost in /etc/hosts
+  become: true
+  replace:
+    path    : /etc/hosts
+    regexp  : "^(######)$"
+    replace : '\1{% if item.name == ansible_hostname %}\n127.0.0.1 localhost {{ ansible_hostname }}{% if item.name == "vm-000" %}layout.canadensys.net canadensys.net data.canadensys.net community.canadensys.net dashboard.canadensys.net alc.canadensys.net{% endif %}{% if item.name == "vm-000" %}\n#206.12.88.98 layout.canadensys.net canadensys.net data.canadensys.net community.canadensys.net alc.canadensys.net{% endif %}{% endif %}'
+  with_items: '{{ vm_infos }}'
+
+
+- name: Add VM hostnames in /etc/hosts
+  become: true
+  replace:
+    path    : /etc/hosts
+    regexp  : "^(####)$"
+    replace : '\1\n{% if item.name == ansible_hostname %}#{% endif %}{{ ipLocal }}{{ item.ip }} {{ item.name }} {% if item.name == "vm-000" %}layout.canadensys.net canadensys.net data.canadensys.net community.canadensys.net dashboard.canadensys.net alc.canadensys.net{% endif %}'
+  with_items: '{{ vm_infos }}'
