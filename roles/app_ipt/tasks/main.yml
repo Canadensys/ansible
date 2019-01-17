@@ -1,0 +1,266 @@
+---
+#- debug:
+#    msg: "patch_result: > {{  app_patch_u }} <"
+#- debug:
+#    msg: "patch_result: > {{  app_patch_d }} <"
+#- debug:
+#    msg: "patch_result: > {{  app_patch_u }} <"
+
+
+# create directories
+- name: Create directories
+  become: true
+  file:
+    path  : '{{ item }}'
+    state : directory
+    owner : '{{ app_user }}'
+    group : '{{ app_grp }}'
+  with_items:
+    - '{{ app_files_d }}'
+    - '{{ bk_c_dir }}'
+    - '{{ bk_dir }}'
+    - '{{ bk_log_d }}'
+  tags:
+    - ipt_directories
+    - ipt_app
+    - patch_ipt
+    - backuped_files
+    - backup
+
+# Setup IPT App
+- name: Update apt cache
+  become: true
+  apt:
+    update_cache: yes
+    cache_valid_time: '{{ app_valid_time }}'
+ 
+- name: Install packages
+  become: true
+  apt:
+    pkg: '{{ item }}'
+    state: present
+    update_cache    : yes
+    cache_valid_time: '{{ app_valid_time }}'
+  with_items: '{{ app_apps }}'
+  tags:
+    - ipt_app
+
+# download war file
+# https://stackoverflow.com/a/37398690/7231194
+- name: Download md5 sum
+  get_url:
+    url: '{{ app_gbif }}.md5'
+    dest: '~/{{ app_md5_f }}'
+    force: true
+  tags:
+    - ipt_app
+
+- name: user_data_contents
+  shell: 'cat ~/{{ app_md5_f }}'
+  register: md5_value_f_content
+  tags:
+    - ipt_app
+
+- name: Get the md5sum
+  set_fact:
+    md5_value: "{{ md5_value_f_content.stdout_lines[0] }}"
+  tags:
+    - ipt_app
+
+- name: Test if war file is here
+  stat:
+    path: '{{ app_webapps }}/{{ app_war }}'
+    checksum_algorithm : md5
+  register: existing_file
+  tags:
+    - ipt_app
+
+- name: Set md5 sum if file here
+  set_fact:
+    force_new_download: "{{ existing_file.stat.checksum != md5_value }}"
+  when: existing_file.stat.exists
+  tags:
+    - ipt_app
+
+- name: Download ipt war file
+  become: true
+  get_url:
+    url  : '{{ app_gbif }}'
+    dest : '{{ app_webapps }}/{{ app_war }}'
+    checksum: "md5:{{ md5_value }}"
+    force:  "{{ force_new_download | default ('false') }}"
+  tags:
+    - ipt_app
+
+# Setup IPT patch
+- name: Delete directories
+  become: true
+  file:
+    path  : '{{ item }}'
+    state : absent
+  with_items:
+    - '{{ app_final }}'
+  tags:
+    - patch_ipt
+
+- name: Restart service tomcat
+  service:
+    name: '{{ tomcat8 }}'
+    state: restarted
+  tags:
+    - patch_ipt
+
+- name: Wait until the webapp folder {{ app_name }} is deployed
+  become: true
+  wait_for:
+    path: "{{ app_final }}"
+    state: present
+  register: ipt_deployed
+  tags:
+    - patch_ipt
+
+- name: Setup default git configuraiton
+  become: true
+  git_config:
+    name="{{ item.name }}"
+    scope=global
+    value="{{ item.value }}"
+  with_items:
+    - {name: "user.name",  value: "UserName" }
+    - {name: "user.email", value: "user.name@notanemail.not" }
+    - {name: "ui.color", value: "True" }
+  tags:
+    - patch_ipt
+
+- name: Download ipt patch
+  become: true
+  shell: "wget -O {{ app_patch_d }} {{ app_patch_u }}"
+  #get_url:
+  #  url  : '{{ app_patch_u }}'
+  #  dest : '{{ app_patch_d }}'
+  #  force: true
+  when: ipt_deployed
+  tags:
+    - patch_ipt
+
+- name: Check if patch file exists
+  become: true
+  stat:
+    path: '{{ app_patch_d }}'
+  register: patch_result
+  tags:
+    - patch_ipt
+
+- name: Git Init
+  become: true
+  shell: 'git init'
+  args:
+    chdir: '{{ app_final }}'
+  tags:
+    - patch_ipt
+
+- name: Git Status
+  become: true
+  shell: 'git status'
+  args:
+    chdir: '{{ app_final }}'
+  tags:
+    - patch_ipt
+
+- name: First commit
+  become: true
+  shell: 'git add -A && git commit -m "IPT first commit"'
+  args:
+    chdir: '{{ app_final }}'
+  ignore_errors: yes
+  tags:
+    - patch_ipt
+
+- name: Test ipt custom file
+  become: true
+  shell: 'git apply --stat {{ app_patch_d }}'
+  args:
+    chdir: '{{ app_final }}'
+  when: patch_result.stat.exists
+  tags:
+    - patch_ipt
+
+- name: Check ipt custom file
+  become: true
+  shell: 'git apply --check {{ app_patch_d }}'
+  args:
+    chdir: '{{ app_final }}'
+  when: patch_result.stat.exists
+  tags:
+    - patch_ipt
+
+- name: Apply ipt custom file
+  become: true
+  shell: 'git am --signoff < {{ app_patch_d }}'
+  args:
+    chdir: '{{ app_final }}'
+  when: patch_result.stat.exists
+  tags:
+    - patch_ipt
+
+# Setup backuped admin and files
+- name: Check for backuped file
+  local_action: stat path='{{ app_bk_files_s }}'
+  register: stat_bk_ipt
+  tags:
+    - backuped_files
+
+- name: Upload backup files
+  become: true
+  copy:
+    src     : '{{ app_bk_files_s }}'
+    dest    : '~/{{ app_bk_files_d }}'
+    force   : false
+  when : stat_bk_ipt.stat.exists
+  tags:
+    - backuped_files
+
+- name: Download from Dropbox
+  become: true
+  shell: "wget -O ~/{{ app_bk_files_d }} {{ app_bk_url_s }}"
+  #get_url:
+  #  url  : '{{ app_bk_url_s }}'
+  #  dest : '~/{{ app_bk_files_d }}'
+  #  force: true
+  #  validate_certs: no
+  when : app_bk_url_s is defined and not stat_bk_ipt.stat.exists
+  tags:
+    - backuped_files
+
+- name: Extract backup files archive
+  become: true
+  unarchive:
+    src : '~/{{ app_bk_files_d }}'
+    dest: '{{ app_files_d }}'
+    owner : '{{ tomcat8 }}'
+    group : '{{ tomcat8 }}'
+    remote_src: yes
+  tags:
+    - backuped_files
+
+# Setup Backup
+- name: Copy backup script in crondir and executable
+  become: true
+  template:
+    src   : '{{ bk_s }}'
+    dest  : '{{ bk_c_dir }}/{{ bk_d }}'
+    mode  : 0754
+    owner : '{{ cron_user }}'
+    group : '{{ bk_grp }}'
+  tags:
+    - backup
+
+- name: Creates daily backup cronjob
+  become: true
+  cron: minute={{ cron_min }} hour={{ cron_hour }}
+        name={{ cron_name }}
+        cron_file={{ cron_file }}
+        user={{ cron_user }}
+        job={{ cron_job }}
+  tags:
+    - backup
