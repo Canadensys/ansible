@@ -1,4 +1,16 @@
 ---
+# Ports
+mysql_port: 3306
+html: 80
+
+# MySQL 
+mysql_root_password: password
+
+# Canadensys
+main_domain     : 'localhost'
+canadensys_email: 'myemail@gmail.com'
+ipLocal         : '192.168.0.'
+
 # package
 apt_cache_valid_time : 3600
 
@@ -7,10 +19,10 @@ web_dir    : '/var/www'
 tmp_dest   : '/tmp'
 ssh_dir    : '~/.ssh'
 
-# Connexion with backup-vm
-bk_user    : bk_user
-bk_group   : bk_user
-bk_rsa_pub : 'ssh-rsa [public file]'
+# Connexion with backup
+bk_user    : backup
+bk_group   : backup
+bk_rsa_pub : 'ssh-rsa public_info'
 bk_home    : '/home/{{ bk_user }}'
 bk_sftp_dir: '{{ bk_home }}/sftp'
 bk_bk_dir  : '{{ bk_sftp_dir }}/backups'
@@ -32,6 +44,10 @@ ssh             : ssh
 tomcat7         : tomcat7
 tomcat8         : tomcat8
 ufw             : ufw
+apache2         : apache2
+parted          : parted
+
+apache2_log_path: /var/log/apache2/
 
 # PHP variables
 php_pool_dir    : /etc/php/7.0/fpm/pool.d
@@ -40,6 +56,23 @@ php_run_dir     : /run/php
 listen_owner    : 'www-data'
 listen_group    : 'www-data'
 
+# nfs
+nfs_server_pkg  : nfs-kernel-server
+nfs_server_app  : nfs-kernel-server
+nfs_server_path : '/ext_data/data'
+nfs_server_ip   : '{{ ipLocal }}XXX'
+nfs_client_user : user
+nfs_client_grp  : group
+nfs_client_pkg  : nfs-common
+nfs_client_path : /data
+nfs_client_mount_opts: 'auto,nofail,noatime,nolock,intr,tcp,actimeo=1800'
+nfs_client_mount_fstype: 'nfs'
+
 # Nginx variables
 nginx_enabled   : '/etc/nginx/sites-enabled'
 nginx_available : '/etc/nginx/sites-available'
+
+vm_infos:
+  - name: ubuntu
+    ip  : 102
+    port: 80
