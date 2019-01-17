@@ -1,7 +1,0 @@
----
-- name: Install Backup vm
-  hosts: all
-  roles:
-    - update
-    - dropbox
-    - vm_backup

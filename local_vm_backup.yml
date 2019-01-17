@@ -1,0 +1,12 @@
+---
+- name: Install a backup vm with dropbox
+  hosts: backup_vm
+  become: true
+
+  vars_files:
+    - '../canadensys-inventories/local_servers/common.yml'
+
+  roles:
+    - update
+    - dropbox
+    - vm_backup

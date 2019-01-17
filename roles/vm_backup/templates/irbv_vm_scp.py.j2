@@ -1,0 +1,33 @@
+#!/usr/bin/python
+from file import function(scp)
+import argparse
+import subprocess
+from subprocess import Popen, PIPE
+
+#
+# How it will work
+# scp files from vm's in tmp
+# check if md5sum is equal
+# transfert to dropbox
+# remove previous files if too old (more than 3 days)
+# 
+
+#--- Variables ---#
+current_date    = (time.strftime("%d-%m-%Y"))
+server          = {{ backup_dict.irbv_vm.serverIP }}
+port            = ""
+user            = {{ backup_dict.irbv_vm.user }}
+remote_path     = {{ main_bk_dir }}
+local_path      = {{ local_bk_dir }}
+identity_file   = {{ ssh_dir }}/{{ backup_priv_key_file }}
+
+#--- MAIN ---# 
+def main():
+    log = open(logfile, 'w')
+    log.write('#\n START SCP for '+current_date+' Daily Backup\n!!!!!\n')
+    scp(port,identity_file,user,server,localpath,remote_path)
+    log.write('#\n END   SCP for '+current_date+' Daily Backup\n!!!!!\n')
+    log.close()
+
+if __name__ == '__main__':
+    main()
