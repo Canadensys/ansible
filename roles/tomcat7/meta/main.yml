@@ -1,3 +1,3 @@
 dependencies:
   - { role: augeas }
-  - { role: java_oracle_7 }
+  #- { role: "{{ java_role }}" }

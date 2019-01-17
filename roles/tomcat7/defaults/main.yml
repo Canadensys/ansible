@@ -1,17 +1,23 @@
 # tomcat7 main variables
-tomcat7:             tomcat7
-tomcat7_user:        tomcat7
-tomcat7_conf:        /etc/default/{{ tomcat7 }}
-tomcat7_conf_dir:    /etc/{{ tomcat7 }}
-tomcat7_conf_server: '{{ tomcat7_conf_dir }}/server.xml'
-tomcat7_log_dir:     /var/log/{{ tomcat7 }}
-tomcat7_dir:         /var/lib/{{ tomcat7 }}
+tomcat              : tomcat7
+tomcat7             : '{{ tomcat }}'
+tomcat7_user        : '{{ tomcat }}'
+tomcat7_conf        : '/etc/default/{{ tomcat7 }}'
+tomcat7_conf_dir    : '/etc/{{ tomcat7 }}'
+tomcat7_conf_server : '{{ tomcat7_conf_dir }}/server.xml'
+tomcat7_log_dir     : '/var/log/{{ tomcat7 }}'
+tomcat7_dir         : '/var/lib/{{ tomcat7 }}'
 #tomcat7_webapps:     /var/lib/webapps/
 
-tomcat7_host_name:   tomcat7_host_name
-tomcat7_maindir:     '/var/www/{{ tomcat7_host_name }}'
-tomcat7_webapps:     '{{ tomcat7_maindir }}/webapps'
+tomcat7_host_name   : data_canadensys_apps
+tomcat7_maindir     : '/var/www/data.canadensys.net'
+tomcat7_webapps     : '{{ tomcat7_maindir }}/webapps'
 
+java_role: 'java_oracle_7'
+java_home_path: '/usr/lib/jvm/java-7-oracle'
+
+#java_role: 'java_openJDK_8'
+#java_home_path: '/usr/lib/jvm/java-1.8.0-openjdk-amd64'
 
 # tomcat7 specific variables
 packaging: "war"

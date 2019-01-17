@@ -8,8 +8,8 @@ tomcat8_log_dir:     /var/log/{{ tomcat8 }}
 tomcat8_dir:         /var/lib/{{ tomcat8 }}
 #tomcat8_webapps:     /var/lib/webapps/
 
-tomcat8_host_name:   tomcat8_host_name
-tomcat8_maindir:     '/var/www/{{ tomcat8_host_name }}'
+tomcat8_host_name:   data_canadensys_apps
+tomcat8_maindir:     '/var/www/data.canadensys.net'
 tomcat8_webapps:     '{{ tomcat8_maindir }}/webapps'
 
 
@@ -24,7 +24,7 @@ tomcat8_pkgs:
 
 # Common tomcat8 variables across all roles
 # replace option: -Djava.awt.headless=true -Xmx128m -XX:+UseConcMarkSweepGC
-tomcat8_java_opts: -Xmx2g -Xms2g -XX:MaxPermSize=256m -Xss256k -Djava.awt.headless=true
+tomcat8_java_opts: -Xmx1g -Xms1g -XX:MaxPermSize=256m -Xss256k -Djava.awt.headless=true
 tomcat8_control_port: 8005
 tomcat8_http: true
 tomcat8_http_port: 8080

@@ -1,6 +1,6 @@
 ---
-- name: restart tomcat7
+- name: restart tomcat
   become: true
   service:
-    name    : '{{ tomcat7 }}'
+    name    : '{{ tomcat }}'
     state   : restarted
