@@ -7,7 +7,9 @@
     update_cache    : yes
     cache_valid_time: '{{ apt_cache_valid_time }}'
   with_items: '{{ ufw_pkgs }}'
-
+  tags:
+    - ufw
+    
 - name: ufw - Setup ufw
   become: true
   ufw:
@@ -15,8 +17,10 @@
     policy  : deny
   notify:
     - restart ufw
+  tags:
+    - ufw
 
-- name: ufw - Allow ssh traffic
+- name: ufw - Allow traffics ssh, http, https
   become: true
   ufw:
     rule    : allow
@@ -25,6 +29,8 @@
   with_items: "{{ ufw_ports }}"
   notify:
     - restart ufw
+  tags:
+    - ufw
 
 - name: Ensure ufw starts on a fresh reboot
   become: true
@@ -32,3 +38,5 @@
     name    : ufw
     state   : started
     enabled : yes
+  tags:
+    - ufw

@@ -9,3 +9,5 @@ ufw_ports:
   - http
   - https
 
+ufw: ufw
+apt_cache_valid_time: 3600
