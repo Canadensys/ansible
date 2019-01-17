@@ -1,0 +1,34 @@
+#Public URL of your portal. Must ends with a slash. Ex. http://data.canadensys.net/vascan/
+#If you are using the default Tomcat setup, the last part should be the name of the WAR file, normally vascan
+VascanRootURL= {{ vascan_editor_RootURL }}
+
+#Editor part
+database.username   = {{ vascan_editor_db_user }}
+database.password   = {{ vascan_editor_db_password }}
+#this shall match hibernate.cfg.xml hibernate.connection.url
+database.host       = {{ vascan_editor_db_host }}
+database.prod.name  = {{ vascan_editor_db_prod }}
+database.dev.name   = {{ vascan_editor_db_name }}
+
+mysql.cmd     = {{ vascan_editor_mysql_cmd }}
+mysql.dump.cmd= {{ vascan_editor_mysql_dump_cmd }}
+elasticsearch.host= {{ vascan_editor_elasticsearch_host }}
+
+vascan.lastPublicationDataFilePath= {{ vascan_editor_last_publication_date }}
+
+SiteMapDir= {{ vascan_editor_dir_vascan_sitemap }}
+
+GeneratedImagesDir  = {{ vascan_editor_GeneratedImagesDir }}
+GeneratedContentDir = {{ vascan_editor_dir_downloadable_content }}
+MySqlBackupDevDir   = {{ vascan_editor_dir_mysqldump }}
+MySqlBackupProdDir  = {{ vascan_editor_dir_mysqldump }}
+MetaXMLDir          = {{ vascan_editor_MetaXMLDir }}
+CompleteDwcaDevDir  = {{ vascan_editor_dir_dwca }}
+CompleteDwcaProdDir = {{ vascan_editor_dir_downloadable_content }}
+
+ChangeLogDir        = {{ vascan_editor_dir_change_log }}
+
+#SendMail part
+SendMailHost        = {{vascan_editor_smtp_host}}
+SendMailFromAddress = {{vascan_editor_email}}
+SendMailToAddresses = {{vascan_editor_email}}

@@ -1,0 +1,141 @@
+---
+#
+#
+# Generic information
+#
+#
+
+
+canadensys_user : vm_user_name
+canadensys_grp  : vm_user_group
+
+# Directories
+nfs_root    : '/data'
+dir_root    : '/var/www/data.canadensys.net'
+dir_webapps : '{{ dir_root }}/webapps'
+## backup directory
+backup_root : '/Backups'
+## tmp deploy
+tmp_checkout_dir: '/tmp/vascan/checkout'
+
+# Tomcat
+tomcat_user     : tomcat8
+tomcat          : tomcat8
+tomcat8_webapps : '{{ dir_webapps }}' 
+tomcat8_maindir : '{{ dir_root }}'
+tomcat_webapps  : '{{ dir_webapps }}' 
+tomcat_maindir  : '{{ dir_root }}'
+
+# Java
+java_role     : 'java_openJDK_8'
+java_home_path: '/usr/lib/jvm/java-1.8.0-openjdk-amd64'
+
+# Google
+google_analytics_site_verification  : google_key
+google_analytics_account            : google_account
+
+# NGINX
+nginx_server_host: localhost
+nginx_sites:
+  vascan:
+    - listen 80
+    - server_name {{ nginx_server_host }}
+    - root {{ vascan_portal_dir_public }}
+    - 'location /vascan-editor { 
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://localhost:8080/vascan-editor/;
+      }'
+    - 'location /sitemap/ {
+      }'
+    - 'location /common/ {
+      }'
+    - 'location /downloads/ {
+      }'
+
+
+#
+#
+# VASCAN EDITOR
+#
+#
+
+vascan_editor_name      : 'vascan-editor'
+vascan_editor_c_name    : 'canadensys_{{ vascan_editor_name }}'
+
+# Databases
+vascan_editor_db_prod    : vascan_newprod
+vascan_editor_db_name    : vascan_newdev
+vascan_editor_db_user    : user
+vascan_editor_db_password: password
+vascan_editor_db_host    : localhost
+vascan_editor_db_src     : 'mysqldump_vascan_editor.gz'
+vascan_editor_db_url     : 'https://www.dropbox.com/yourfile_mysqldump_vascan_editor.gz?dl=1'
+vascan_editor_db_dest    : '{{ tmp_checkout_dir }}'
+vascan_editor_db_zip     : '{{ tmp_checkout_dir }}/mysqldump_vascan_editor.gz'
+
+# War File
+vascan_editor_war_file  : vascan-editor.war
+vascan_editor_war_url   : 'https://www.dropbox.com/yourfile_vascan-editor.war?dl=1'
+
+# NFS Directories
+#vascan_editor_nfs         : '{{ nfs_root }}/{{ vascan_editor_c_name }}'
+#vascan_editor_nfs_public  : '{{vascan_editor_nfs}}/public'
+#vascan_editor_nfs_data    : '{{vascan_editor_nfs}}/vascan-editor-data'
+
+# Directories
+vascan_editor_dir                       : '{{ dir_root }}'
+vascan_editor_dir_public                : '{{ vascan_editor_dir }}/public'
+vascan_editor_dir_downloads             : '{{ vascan_portal_dir_public }}/downloads'
+vascan_editor_dir_downloadable_content  : '{{ vascan_editor_dir_downloads }}/vascan'
+vascan_editor_dir_generated_content     : '{{ vascan_editor_dir_downloadable_content }}'
+vascan_editor_dir_vascan_sitemap        : '{{ vascan_editor_dir_public }}/sitemap/vascan/'
+# To be linked with nfs
+vascan_editor_dir_vascan_editor_data: '{{ vascan_editor_dir }}/vascan-editor-data'
+vascan_editor_dir_mysqldump         : '{{ vascan_editor_dir_vascan_editor_data }}/mysqldump/'
+vascan_editor_dir_dwca              : '{{ vascan_editor_dir_vascan_editor_data }}/dwca/'
+vascan_editor_dir_change_log        : '{{ vascan_editor_dir_vascan_editor_data }}/changelog/'
+vascan_editor_dir_scripts           : '{{ vascan_editor_nfs }}/scripts'
+
+# Cron Info
+vascan_editor_cron_url   : http://data.canadensys.net/vascan-editor/url_to_generate_vascan_portal
+vascan_editor_cron_log_file : '{{ vascan_editor_dir_scripts }}/vascan_cron.log'
+vascan_editor_cron_name : 'Database tester {{ vascan_editor_c_name }} (minutes schedule)'
+vascan_editor_cron_file : '{{ vascan_editor_c_name }}-db-tester'
+vascan_editor_cron_day  : '*'
+vascan_editor_cron_hour : '*'
+vascan_editor_cron_min  : '*/1'
+vascan_editor_cron_user : '{{ canadensys_user }}'
+vascan_editor_cron_grp  : '{{ canadensys_grp }}'
+vascan_editor_cron_job  : '/usr/bin/python {{ vascan_editor_cron_d }}'
+vascan_editor_cron_s    : 'vascan_editor_cron.py.j2'
+vascan_editor_cron_d    : '{{ vascan_editor_dir_scripts }}/vascan_editor_cron.py'
+
+# Backup
+vascan_editor_backup_log_file : '{{ vascan_editor_dir_scripts }}/vascan_backup.log'
+vascan_editor_backup_name : 'Backup {{ vascan_editor_c_name }} (daily schedule)'
+vascan_editor_backup_file : '{{ vascan_editor_c_name }}-DailyBackups'
+vascan_editor_backup_day  : '*'
+vascan_editor_backup_hour : '2'
+vascan_editor_backup_min  : '30'
+vascan_editor_backup_user : '{{ canadensys_user }}'
+vascan_editor_backup_grp  : '{{ canadensys_grp }}'
+vascan_editor_backup_job  : '/usr/bin/python {{ vascan_editor_backup_d }}'
+vascan_editor_backup_s    : 'vascan_editor_backup.py.j2'
+vascan_editor_backup_d    : '{{ vascan_editor_dir_scripts }}/vascan_editor_backup.py'
+vascan_editor_backup_dir  : '{{ backup_root }}/{{ vascan_editor_c_name }}'
+
+# config file
+vascan_editor_config_d: '{{ vascan_editor_dir }}/webapps/vascan-editor/WEB-INF/classes/installation_cfg.properties'
+vascan_editor_config_s: 'installation_cfg.properties.j2'
+vascan_editor_RootURL : 'http://data.canadensys.net/vascan-editor/'
+vascan_editor_mysql_cmd         : mysql
+vascan_editor_mysql_dump_cmd    : mysqldump
+vascan_editor_elasticsearch_host: localhost
+vascan_editor_last_publication_date: '{{ vascan_portal_last_publication_date }}'
+vascan_editor_GeneratedImagesDir  : '{{ vascan_portal_dir_generated_images }}'
+vascan_editor_MetaXMLDir          : '{{ vascan_editor_dir }}/webapps/vascan-editor/WEB-INF/classes/'
+vascan_editor_email: your_email@your.email.com
+vascan_editor_smtp_host: localhost
+vascan_editor_data: '{{ vascan_dir_root }}/vascan-editor-data'
+vascan_editor_public: '{{ vascan_dir_root }}//public/'

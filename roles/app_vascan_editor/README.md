@@ -6,10 +6,9 @@ Install and configure the Vascan Editor.
 
 The following roles should be applied first:
 
-* common
 * mysql
 * tomcat8
 * vascan
 
 A valid database dump should be available at the path configured with
-vascan_editor_db.src and the Vascan Editor war should be at vascan_editor_war
+vascan_editor_db_src and the Vascan Editor war should be at vascan_editor_war

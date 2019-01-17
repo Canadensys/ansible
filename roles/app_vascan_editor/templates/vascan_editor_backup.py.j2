@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+"""
+Title : {{ vascan_editor_c_name }} backup script
+Author: Canadensys
+Date  : 2018-11
+"""
+
+import sys,os
+import tarfile
+import time
+
+############
+# Variables 
+############
+
+#--- Variables files ---#
+site_name     = "{{ vascan_editor_c_name }}"
+main_bk_dir   = "{{ vascan_editor_backup_dir }}"
+main_app_dir  = "{{ dir_root }}"
+current_date  = (time.strftime("%d-%m-%Y"))
+app_zip_file  = main_bk_dir+"/"+site_name+"_website.tar.gz"
+
+#--- Variables db ---#
+db_name     = "{{ vascan_editor_db_name }}"
+db_uname    = "{{ vascan_editor_db_user }}"
+db_password = "{{ vascan_editor_db_password }}"
+db_file     = main_bk_dir+"/"+db_name+"_database.sql"
+db_zip      = db_file+".gz"
+
+#--- Variables logfile ---#
+logfile     = "{{ vascan_editor_backup_log_file }}"
+
+#--- Variables for tests ---#
+space_default_needed = 10000
+
+############
+# Script
+############
+
+#--- Test available space ---#
+def test_available_space():
+    size = os.statvfs(main_bk_dir)
+    available_space=(size.f_bavail * size.f_frsize) / 1024
+    return available_space
+
+#--- Backup App files ---#
+def backup_app_files():
+    print_log('\tStart backup files\n')
+    os.system("tar -zcf "+app_zip_file+' --directory="'+main_app_dir+'" .')
+    print_log('\tEnd   backup files\n')
+
+#--- Backup sql database ---#
+def backup_app_db():
+    print_log('\tStart backup database\n')
+    os.system("mysqldump -u "+db_uname+" -p"+db_password+" "+db_name+" | gzip -c > "+db_zip)
+    print_log('\tEnd   backup database\n')
+
+#--- Print on log ---#
+def print_log(s):
+  f = open(logfile, 'a' )
+  ti = time.strftime("%d-%m-%Y %H:%M:%S")
+  f.write("{}:::\t {}".format(ti,s))
+  f.close()
+
+#--- MAIN ---# 
+def main():
+    if test_available_space  > space_default_needed:
+        print_log('##### Start of '+current_date+' Daily Backup\n\n')
+        backup_app_files()
+        backup_app_db()
+        print_log('##### End of '+current_date+' Daily Backup\n\n')
+    else:
+        print_log('!!!!!\n WARNING NOT ENOUGHT SPACE for '+current_date+' Daily Backup\n!!!!!\n')
+
+if __name__ == '__main__':
+    main()

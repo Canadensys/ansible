@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+"""
+Title : {{ vascan_editor_c_name }} Cron
+Author: Canadensys
+Date  : 2018-11
+
+Python version tested:
+Python 2.7.12
+
+Python library :
+sudo apt-get install python-mysqldb
+
+The php version was:
+<?php
+// check every minute for a generate instruction from the database
+$link = mysql_connect("{{vascan_editor_db_host}}","{{vascan_editor_db_user}}","{{vascan_editor_db_password}}");
+mysql_selectdb("{{vascan_editor_db_name}}");
+$generate = mysql_fetch_row(mysql_query("SELECT `value` FROM `config` WHERE `key` = 'generate' AND `value` = 'true'"));
+$building = mysql_fetch_row(mysql_query("SELECT `value` FROM `config` WHERE `key` = 'building' AND `value` = 'false'"));
+if($generate[0] == "true" && $building[0] == "false"){
+	mysql_query("UPDATE config SET `value` = 'false' WHERE `key` = 'generate'") or die (mysql_error());
+	mysql_query("UPDATE config SET `value` = 'true' WHERE `key` = 'building'") or die (mysql_error());
+	//exec("/usr/bin/wget -q -O /dev/null '{{ vascan_editor_cron_url }}'");
+	//http://stackoverflow.com/questions/45953/php-execute-a-background-process
+	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", "/usr/bin/wget -T 7200 '{{ vascan_editor_cron_url }}'", 
+"{{ vascan_editor_cron_log_file }}", "vascan_cron.pid"));
+}
+mysql_close($link);
+?>
+"""
+
+import sys, os, MySQLdb, subprocess
+import shlex
+import time
+from subprocess import check_call
+
+logFile = '{{ vascan_editor_cron_log_file }}'
+cronUrl = '{{ vascan_editor_cron_url }}'
+
+def main():
+  db = MySQLdb.connect(host="{{vascan_editor_db_host}}",user="{{vascan_editor_db_user}}",passwd="{{vascan_editor_db_password}}",db="{{vascan_editor_db_name}}")
+  cur = db.cursor()
+  cur.execute("SELECT `value` FROM `config` WHERE `key` = 'generate' AND `value` = 'true'")
+  generate = cur.fetchall()
+  cur.execute("SELECT `value` FROM `config` WHERE `key` = 'building' AND `value` = 'false'")
+  building = cur.fetchall()
+  if len(generate)>0 and len(building)>0:
+    if("true" in generate[0][0] and "false" in building[0][0]):
+      cur.execute("UPDATE config SET `value` = 'false' WHERE `key` = 'generate'")
+      db.commit()
+      print("update generate")
+      print_log("update generate")
+      cur.execute("UPDATE config SET `value` = 'true' WHERE `key` = 'building'")
+      db.commit()
+      print("update building")
+      print_log("update building")
+      w = "/usr/bin/wget -T 7200 '"+cronUrl+"'"
+      cmd = shlex.split(w)
+      pro = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      stdout, stderr = pro.communicate()
+      print('STDout\n{}\n\nSTDErr\n{}'.format(stdout,stderr))
+      print_log('STDout\n{}\n\nSTDErr\n{}'.format(stdout,stderr))
+  cur.close()
+  db.close()
+
+def print_log(s):
+  f = open(logFile, 'a' )
+  ti = time.strftime("%d-%m-%Y %H:%M:%S")
+  f.write("{}:::\t {}".format(ti,s))
+  f.close()
+
+if __name__ == '__main__': 
+    main ()

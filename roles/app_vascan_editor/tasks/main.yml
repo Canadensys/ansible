@@ -1,0 +1,346 @@
+---
+#- debug:
+#    msg: "source_dict : {{ stat_bk_vascan_editor_war }}"
+
+# Create tmp directory
+- name: Create tmp deployment directory 
+  become: true
+  file:
+    path: '{{ tmp_checkout_dir }}'
+    state: directory
+  tags:
+    - editor
+    - editor-directories
+
+# Setup MySQL Database
+- name: Create databases in MySql
+  become: true
+  mysql_db:
+    name    : '{{ vascan_editor_db_name }}'
+    state   : present
+  tags:
+    - editor
+    - editor-database
+
+- name: Create database users
+  become: true
+  mysql_user:
+    name  : '{{ vascan_editor_db_user }}'
+    password: '{{ vascan_editor_db_password }}'
+    priv  : '{{ vascan_editor_db_name }}.*:ALL'
+    host  : '{{ vascan_editor_db_host }}'
+    state : present
+    append_privs : yes
+  tags:
+    - editor
+    - editor-database
+
+## Upload backuped database
+- name: Upload backup files
+  become: true
+  copy:
+    src     : '{{ vascan_editor_db_src }}'
+    dest    : '{{ vascan_editor_db_zip }}'
+  register: stat_bk_vascan_editor_db
+  ignore_errors: yes
+  tags:
+    - editor
+    - editor-database
+
+- name: Download database from Dropbox
+  become: true
+  shell: "wget -O {{ vascan_editor_db_zip }} {{ vascan_editor_db_url }}"
+  when : vascan_editor_db_url is defined and stat_bk_vascan_editor_db.failed
+  tags:
+    - editor
+    - editor-database
+
+- name: Restore MySQL Database from file
+  become: true
+  mysql_db:
+    name    : '{{ vascan_editor_db_name }}'
+    state   : import
+    target  : '{{ vascan_editor_db_zip }}'
+  notify: restart mysql
+  tags:
+    - editor
+    - editor-database
+
+# Setup directories
+## Test if NFS and set parameters
+- name: Set is on nfs to false
+  set_fact:
+    is_on_nfs: false
+  tags:
+    - editor
+    - editor-directories
+
+- name: Set is on nfs if vascan_editor_nfs exist and vascan_editor_nfs != vascan_editor_dir
+  set_fact:
+    is_on_nfs: true
+  when : vascan_editor_nfs is defined and not (vascan_editor_nfs == vascan_editor_dir)
+  tags:
+    - editor
+    - editor-directories
+
+- name: Set vascan_editor_nfs if is not on nfs
+  set_fact:
+    vascan_editor_nfs: '{{ vascan_editor_dir }}'
+  when: not is_on_nfs
+  tags:
+    - editor
+    - editor-directories
+
+#- debug:
+#    msg: "is_on_nfs : {{ is_on_nfs }}"
+#  tags:
+#    - tools
+
+## Setup webapp directory
+- name: Create Vascan shared directories
+  become: true
+  file:
+    path: '{{ tomcat_webapps }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  tags:
+    - editor
+    - editor-directories
+
+- name: Create editor directory
+  become: true
+  file:
+    path: '{{ vascan_editor_dir }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  tags:
+    - editor
+    - editor-directories
+
+- name: Create editor sub directory if not NFS
+  become: true
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  with_items:
+    - '{{ vascan_editor_dir_public }}'
+    - '{{ vascan_editor_dir_vascan_editor_data }}'
+  when: not is_on_nfs
+  tags:
+    - editor
+    - editor-directories
+
+## Setup NFS directories
+- name: Create editor nfs directory
+  become: true
+  file:
+    path: '{{ vascan_editor_nfs_data }}'
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  when: is_on_nfs
+  tags:
+    - editor
+    - editor-directories
+
+- name: Link nfs and root directory
+  become: true
+  file:
+    src   : '{{ item.src }}'
+    dest  : '{{ item.dest }}'
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+    state : link
+  loop:
+    - { src: '{{ vascan_editor_nfs_public }}', dest: '{{ vascan_editor_dir_public }}' }
+    - { src: '{{ vascan_editor_nfs_data }}', dest: '{{ vascan_editor_dir_vascan_editor_data }}' }
+  when: is_on_nfs
+  tags:
+    - editor
+    - editor-directories
+
+## create other directories
+- name: Prepare Vascan Editor directory structure
+  become: true
+  file: 
+    path: "{{ item }}"
+    state: directory
+    owner: '{{ tomcat_user }}'
+    group: '{{ tomcat_user }}'
+  with_items:
+    - '{{ vascan_editor_dir_downloads }}'
+    - '{{ vascan_editor_dir_downloadable_content }}'
+    - '{{ vascan_editor_dir_generated_content }}'
+    - '{{ vascan_editor_dir_vascan_sitemap }}'
+    - '{{ vascan_editor_dir_mysqldump }}'
+    - '{{ vascan_editor_dir_dwca }}'
+    - '{{ vascan_editor_dir_change_log }}'
+  tags:
+    - editor
+    - editor-directories
+
+# Setup application file
+- name: Move Vascan Editor WAR to Tomcat
+  become: true
+  copy:
+    src     : '{{ vascan_editor_war_file }}'
+    dest    : '{{ tomcat_webapps }}'
+  ignore_errors: yes
+  register: stat_bk_vascan_editor_war
+  notify: restart tomcat
+  tags:
+    - editor
+    - editor-war
+
+- name: Download war file from Dropbox
+  become: true
+  shell: "wget -O {{ tomcat_webapps }}/vascan-editor.war {{vascan_editor_war_url }}"
+  notify: restart tomcat
+  when : vascan_editor_war_url is defined and stat_bk_vascan_editor_war.failed
+  tags:
+    - editor
+    - editor-war
+
+- name: Restart tomcat
+  become: true
+  service:
+    name    : '{{ tomcat }}'
+    state   : restarted
+    
+# Setup cron job to rebuild Vascan Editor database.
+- name: Prepare Vascan Editor Cron directory structure
+  become: true
+  file: 
+    path  : "{{ item }}"
+    owner : '{{ vascan_editor_cron_user }}'
+    group : '{{ vascan_editor_cron_grp }}'
+    state : directory
+  with_items:
+    - '{{ vascan_editor_dir_scripts }}'
+  tags:
+    - editor
+    - editor-cron
+
+- name: Prepare Vascan Editor Log File rebuild database
+  become: true
+  file: 
+    path  : "{{ item }}"
+    owner : '{{ vascan_editor_backup_user }}'
+    group : '{{ vascan_editor_backup_grp }}'
+    state : touch
+  with_items:
+    - '{{ vascan_editor_cron_log_file }}'
+  tags:
+    - editor
+    - editor-cron
+
+- name: Install python-mysqldb
+  become: true
+  apt:
+    pkg: python-mysqldb
+    state: present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  tags:
+    - editor
+    - editor-cron
+
+- name: Copy minutes checker script in crondir and execute
+  become: true
+  template:
+    src   : '{{ vascan_editor_cron_s }}'
+    dest  : '{{ vascan_editor_cron_d }}'
+    mode  : 0500
+    owner : '{{ vascan_editor_cron_user }}'
+  tags:
+    - editor
+    - editor-cron
+
+- name: Creates minutes checker cronjob
+  become: true
+  cron: minute={{ vascan_editor_cron_min }} hour={{ vascan_editor_cron_hour }}
+        name={{ vascan_editor_cron_name }}
+        cron_file={{ vascan_editor_cron_file }}
+        user={{ vascan_editor_cron_user }}
+        job={{ vascan_editor_cron_job }}
+  tags:
+    - editor
+    - editor-cron
+
+# Setup Backup
+- name: Prepare Vascan Editor Backup Cron directory structure
+  become: true
+  file: 
+    path  : "{{ item }}"
+    owner : '{{ vascan_editor_backup_user }}'
+    group : '{{ vascan_editor_backup_grp }}'
+    state : directory
+  with_items:
+    - '{{ vascan_editor_dir_scripts }}'
+    - '{{ vascan_editor_backup_dir }}'
+  tags:
+    - editor
+    - editor-backup
+
+- name: Prepare Vascan Editor Log File backup
+  become: true
+  file: 
+    path  : "{{ item }}"
+    owner : '{{ vascan_editor_backup_user }}'
+    group : '{{ vascan_editor_backup_grp }}'
+    state : touch
+  with_items:
+    - '{{ vascan_editor_backup_log_file }}'
+  tags:
+    - editor
+    - editor-backup
+
+- name: Copy backup script in crondir and execute
+  become: true
+  template:
+    src   : '{{ vascan_editor_backup_s }}'
+    dest  : '{{ vascan_editor_backup_d }}'
+    mode  : 0500
+    owner : '{{ vascan_editor_backup_user }}'
+  tags:
+    - editor
+    - editor-backup
+
+- name: Creates minutes checker cronjob
+  become: true
+  cron: minute={{ vascan_editor_backup_min }} hour={{ vascan_editor_backup_hour }}
+        name={{ vascan_editor_backup_name }}
+        cron_file={{ vascan_editor_backup_file }}
+        user={{ vascan_editor_backup_user }}
+        job={{ vascan_editor_backup_job }}
+  tags:
+    - editor
+    - editor-backup
+
+# change config
+- name: Wait for vascan editor config file
+  wait_for:
+    path: '{{ vascan_editor_config_d }}'
+    sleep: 10
+    state: present
+    msg: Timeout to find file installation_cfg.properties for Vascan-Editor
+  register: vascan_editor_config_file
+  ignore_errors: yes
+  tags:
+    - editor
+    - editor-config
+
+- name: change config and restart tomcat
+  become: true
+  template:
+    src   : '{{ vascan_editor_config_s }}'
+    dest  : '{{ vascan_editor_config_d }}'
+  when: vascan_editor_config_file  and not vascan_editor_config_file.failed
+  notify: restart tomcat
+  tags:
+    - editor
+    - editor-config
