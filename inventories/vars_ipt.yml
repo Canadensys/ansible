@@ -1,0 +1,36 @@
+#
+#
+# VM SETTINGS
+#
+#
+
+# Postfix packages
+mail_name: app2_vm
+
+
+#
+#
+# IPT
+#
+#
+
+# IPT Backup variables
+ipt_backup_name    : 'ipt_local'
+ipt_backup_server  : 'ipt_local'
+ipt_backup_serverIP: '198.168.0.2'
+ipt_backup_script  : 'ipt_local_backup.py'
+ipt_backup_dp_dir  : 'ipt_local/'
+ipt_backup_user    : '{{ bk_user }}'
+ipt_backup_cron_name: "Backup {{ ipt_backup_name }} MediaWiki (daily schedule)"
+ipt_backup_cron_file: "{{ ipt_backup_name }}-DailyBackups"
+ipt_backup_cron_day : "1-31"
+ipt_backup_cron_hour: "1"
+ipt_backup_cron_min : "10"
+
+# IPT Cron
+ipt_logname     : 'canadensys_ipt_logs'
+ipt_logfile     : '{{ bk_log_dir }}/{{ wp_logname }}'
+ipt_backup_src  : 'ipt_backup.py.j2'
+ipt_backup_dest : '{{ ipt_backup_name }}.py'
+ipt_cron        : '{{ bk_cron_dir }}/{{ ipt_backup_dest }}'
+itp_final       : /var/www/data.canadensys.net/ipt-data/
