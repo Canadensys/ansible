@@ -11,6 +11,7 @@
   tags:
     - portal
     - portal-directories
+    - portal-database
 
 # Setup MySQL Database
 - name: Create databases in MySql
@@ -72,6 +73,49 @@
   tags:
     - portal
     - portal-database
+
+- name: Configuring mysql condif subsystem PART1
+  become: true
+  replace:
+    dest    : /etc/mysql/mysql.conf.d/mysqld.cnf
+    replace : 'sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION" '
+    regexp  : 'sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"$'
+    backup  : yes
+  register  : checkmysqlconf
+  notify: restart mysql
+  tags:
+    - portal
+    - portal-database
+    - portal-test
+
+- name: Configuring mysql condif subsystem PART2
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/mysql/mysql.conf.d/mysqld.cnf
+    line    : 'sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"'
+    insertafter: '\[mysqld\]'
+    regexp  : 'sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"'
+  notify: restart mysql
+  when: not checkmysqlconf.changed
+  tags:
+    - portal
+    - portal-database
+    - portal-test
+
+- name: Configuring mysql condif subsystem PART3
+  become: true
+  lineinfile:
+    state   : present
+    dest    : /etc/mysql/mysql.conf.d/mysqld.cnf
+    line    : 'sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"'
+    regexp  : 'sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION" $'
+  notify: restart mysql
+  when: checkmysqlconf.changed
+  tags:
+    - portal
+    - portal-database
+    - portal-test
 
 ## Test database
 - name: Retrieve Taxon count from MySQL
