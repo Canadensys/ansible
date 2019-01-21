@@ -75,7 +75,7 @@ vascan_portal_c_name    : 'canadensys_{{ vascan_portal_name }}'
 # Last release version. Mostly use to versionned web assets (e.g. css and js)
 # We normaly match the version with https://github.com/Canadensys/vascan/releases
 vascan_version: '3.5.6'
-data_access_version: '2.17.0'
+data_access_version: '2.17.1'
 
 # Databases
 vascan_portal_db_name    : vascan_newprod
