@@ -86,7 +86,6 @@
   tags:
     - portal
     - portal-database
-    - portal-test
 
 - name: Configuring mysql condif subsystem PART2
   become: true
@@ -101,7 +100,6 @@
   tags:
     - portal
     - portal-database
-    - portal-test
 
 - name: Configuring mysql condif subsystem PART3
   become: true
@@ -115,7 +113,6 @@
   tags:
     - portal
     - portal-database
-    - portal-test
 
 ## Test database
 - name: Retrieve Taxon count from MySQL
