@@ -16,7 +16,7 @@ dir_webapps : '{{ dir_root }}/webapps'
 ## backup directory
 backup_root : '/Backups'
 ## tmp deploy
-tmp_checkout_dir: '/tmp/vascan/checkout'
+tmp_checkout_dir: '/tmp/vascan-editor/checkout'
 
 # Tomcat
 tomcat_user     : tomcat8
@@ -75,8 +75,19 @@ vascan_editor_db_dest    : '{{ tmp_checkout_dir }}'
 vascan_editor_db_zip     : '{{ tmp_checkout_dir }}/mysqldump_vascan_editor.gz'
 
 # War File
-vascan_editor_war_file  : vascan-editor.war
-vascan_editor_war_url   : 'https://www.dropbox.com/yourfile_vascan-editor.war?dl=1'
+# vascan_editor_war_file  : vascan-editor.war
+# vascan_editor_war_url   : 'https://www.dropbox.com/yourfile_vascan-editor.war?dl=1'
+
+# Source Code
+vascan_editor_source_repo: https://github.com/JeGoi/vascan-editor
+vascan_editor_source_folder_name: code
+vascan_editor_source_root_dir: '{{ tmp_checkout_dir }}'
+vascan_editor_source_dir: '{{ vascan_editor_source_root_dir }}/{{ vascan_editor_source_folder_name }}'
+
+# local path (on the machine that will run this script)
+vascan_editor_source_checkout_dir_local: '/tmp/vascan-editor-source/{{ vascan_editor_source_folder_name }}'
+vascan_editor_source_checkout_dir_compressed: '{{ vascan_editor_source_checkout_dir_local }}-archive.gz'
+vascan_editor_source_version: master
 
 # NFS Directories
 #vascan_editor_nfs         : '{{ nfs_root }}/{{ vascan_editor_c_name }}'
@@ -85,13 +96,15 @@ vascan_editor_war_url   : 'https://www.dropbox.com/yourfile_vascan-editor.war?dl
 
 # Directories
 vascan_editor_dir                       : '{{ dir_root }}'
+# TO CHECK -> public folder is a shared folder with vascan so that the editor can put the complete DarwinCore archive there and it will be accessible via vascan (public url to download it)
 vascan_editor_dir_public                : '{{ vascan_editor_dir }}/public'
-vascan_editor_dir_downloads             : '{{ vascan_portal_dir_public }}/downloads'
+vascan_editor_dir_downloads             : '{{ vascan_editor_dir_public }}/downloads'
 vascan_editor_dir_downloadable_content  : '{{ vascan_editor_dir_downloads }}/vascan'
 vascan_editor_dir_generated_content     : '{{ vascan_editor_dir_downloadable_content }}'
 vascan_editor_dir_vascan_sitemap        : '{{ vascan_editor_dir_public }}/sitemap/vascan/'
 # To be linked with nfs
 vascan_editor_dir_vascan_editor_data: '{{ vascan_editor_dir }}/vascan-editor-data'
+vascan_editor_dir_vascan_editor_log: '{{ vascan_editor_dir_vascan_editor_data }}/vascan-editor.log'
 vascan_editor_dir_mysqldump         : '{{ vascan_editor_dir_vascan_editor_data }}/mysqldump/'
 vascan_editor_dir_dwca              : '{{ vascan_editor_dir_vascan_editor_data }}/dwca/'
 vascan_editor_dir_change_log        : '{{ vascan_editor_dir_vascan_editor_data }}/changelog/'
@@ -128,14 +141,27 @@ vascan_editor_backup_dir  : '{{ backup_root }}/{{ vascan_editor_c_name }}'
 # config file
 vascan_editor_config_d: '{{ vascan_editor_dir }}/webapps/vascan-editor/WEB-INF/classes/installation_cfg.properties'
 vascan_editor_config_s: 'installation_cfg.properties.j2'
-vascan_editor_RootURL : 'http://data.canadensys.net/vascan-editor/'
+vascan_editor_portal_url : 'http://data.canadensys.net/vascan/' #url of the vascan portal (not the editor)
 vascan_editor_mysql_cmd         : mysql
 vascan_editor_mysql_dump_cmd    : mysqldump
 vascan_editor_elasticsearch_host: localhost
-vascan_editor_last_publication_date: '{{ vascan_portal_last_publication_date }}'
-vascan_editor_GeneratedImagesDir  : '{{ vascan_portal_dir_generated_images }}'
+vascan_editor_last_publication_date: '/tmp'
+
+# TO CHECK -> vascan_editor_GeneratedImagesDir should be the exact same folder as vascan_portal_dir_generated_content from app_vascan_portal role
+vascan_editor_GeneratedImagesDir  : '{{ vascan_editor_dir_generated_content }}'
 vascan_editor_MetaXMLDir          : '{{ vascan_editor_dir }}/webapps/vascan-editor/WEB-INF/classes/'
 vascan_editor_email: your_email@your.email.com
 vascan_editor_smtp_host: localhost
-vascan_editor_data: '{{ vascan_dir_root }}/vascan-editor-data'
-vascan_editor_public: '{{ vascan_dir_root }}//public/'
+
+#should come from vascan role (a generic role since they shall always match)
+elastic_search_rivers:
+  taxon:
+    sql: >
+       SELECT l1.taxonid as _id, l1.calname as taxonname, l1.calname as sortname, l1.calnamehtml as namehtml,
+       l1.calnamehtmlauthor as namehtmlauthor, l1.status, taxonomy.parentid, l2.calnamehtml AS parentnamehtml,
+       l1.rank as rankname FROM lookup l1 LEFT OUTER JOIN taxonomy on childid = taxonid LEFT OUTER JOIN lookup as l2
+       ON l2.taxonid = taxonomy.parentid
+    name: vascan_taxon_jdbc_river
+  vernacular:
+    sql: SELECT v.id AS _id, v.taxonid, name as vernacularname, name as sortname, s.status, language, calnamehtml AS taxonnamehtml FROM vernacularname v INNER JOIN status s on statusid = s.id INNER JOIN lookup ON lookup.taxonid=v.taxonid
+    name: vascan_vernacular_jdbc_river
