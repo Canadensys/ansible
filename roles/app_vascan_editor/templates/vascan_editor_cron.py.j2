@@ -54,8 +54,10 @@ def main():
       db.commit()
       print("update building")
       print_log("update building")
-      w = "/usr/bin/wget -T 7200 '"+cronUrl+"'"
+      w = "/usr/bin/wget --timeout=7200 --tries=1 '"+cronUrl+"'"
       cmd = shlex.split(w)
+      print('cmd: {}'.format(cmd))
+      print_log('cmd: {}'.format(cmd))
       pro = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
       stdout, stderr = pro.communicate()
       print('STDout\n{}\n\nSTDErr\n{}'.format(stdout,stderr))
