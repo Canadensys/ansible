@@ -18,13 +18,13 @@ site_name     = "{{ vascan_editor_c_name }}"
 main_bk_dir   = "{{ vascan_editor_backup_dir }}"
 main_app_dir  = "{{ dir_root }}"
 current_date  = (time.strftime("%d-%m-%Y"))
-app_zip_file  = main_bk_dir+"/"+site_name+"_website.tar.gz"
+app_zip_file  = main_bk_dir+"/"+current_date+"_"+site_name+"_website.tar.gz"
 
 #--- Variables db ---#
 db_name     = "{{ vascan_editor_db_name }}"
 db_uname    = "{{ vascan_editor_db_user }}"
 db_password = "{{ vascan_editor_db_password }}"
-db_file     = main_bk_dir+"/"+db_name+"_database.sql"
+db_file     = main_bk_dir+"/"+current_date+"_"+db_name+"_database.sql"
 db_zip      = db_file+".gz"
 
 #--- Variables logfile ---#

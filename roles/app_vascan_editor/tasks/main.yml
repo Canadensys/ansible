@@ -184,6 +184,101 @@
     - editor
     - editor-directories
 
+## create war file from github
+- name: Clone Vascan-Editor from GitHub locally (since it's a private repo)
+  become: false
+  local_action: 
+    module: git
+    repo: '{{ vascan_editor_source_repo }}'
+    dest: '{{ vascan_editor_source_checkout_dir_local }}'
+    version: '{{ vascan_editor_source_version }}'
+  tags:
+    - editor
+    - editor-war
+
+- name: Compress Vascan-Editor
+  become: false
+  local_action: 
+    module: archive
+    path: '{{ vascan_editor_source_checkout_dir_local }}'
+    dest: '{{ vascan_editor_source_checkout_dir_compressed }}'
+    #remove: yes
+  tags:
+    - editor
+    - editor-war
+
+- name: Uncompress Vascan-Editor on remote
+  unarchive:
+    src: '{{ vascan_editor_source_checkout_dir_compressed }}'
+    dest: '{{ vascan_editor_source_root_dir }}'
+  tags:
+    - editor
+    - editor-war
+
+- name: Create Vascan-Editor properties file 
+  template:
+    src   : '{{ vascan_editor_config_s }}'
+    dest  : '{{ vascan_editor_source_dir }}/config/editor_installation_cfg.properties'
+  tags:
+    - editor
+    - editor-war
+
+- name: Create Vascan-Editor log4j config file 
+  template:
+    src   : 'log4j.properties.j2'
+    dest  : '{{ vascan_editor_source_dir }}/log4j.properties'
+  tags:
+    - editor
+    - editor-war
+
+- name: Create Vascan-Editor river files
+  become: true
+  template:
+    src   : elastic_search_river.json.j2
+    dest  : '{{ vascan_editor_source_dir }}/config/create_vascan_{{ item.key }}_river.txt'
+  with_dict: '{{ elastic_search_rivers }}'
+  tags:
+    - editor
+    - editor-war
+
+#### Vascan-Editor is using Ant as build tool
+- name: Install Apache Ant
+  become: true
+  apt:
+    pkg: maven
+    state: present
+    update_cache    : yes
+  tags:
+    - editor
+    - editor-war
+
+- name: Build Vascan-Editor
+  command: ant war
+  args:
+    chdir: '{{ vascan_editor_source_dir }}'
+  tags:
+    - editor
+    - editor-war
+
+- name: Copy Vascan-Editor war to tomcat webapps folder
+  copy:
+    src: '{{ vascan_editor_source_dir }}/deploy/vascan-editor.war'
+    dest: '{{ tomcat_webapps }}/vascan-editor.war'
+    remote_src: true
+  notify: restart tomcat
+  tags:
+    - editor
+    - editor-war
+
+- name: Restart tomcat
+  become: true
+  service:
+    name    : '{{ tomcat }}'
+    state   : restarted
+  tags:
+    - editor
+    - editor-war
+
 # Setup application file
 #- name: Move Vascan Editor WAR to Tomcat
 #  become: true
@@ -196,82 +291,6 @@
 #  tags:
 #    - editor
 #    - editor-war
-
-- name: Clone Vascan-Editor from GitHub locally (since it's a private repo)
-  become: false
-  local_action: 
-    module: git
-    repo: '{{ vascan_editor_source_repo }}'
-    dest: '{{ vascan_editor_source_checkout_dir_local }}'
-    version: '{{ vascan_editor_source_version }}'
-  tags:
-    - editor2
-
-- name: Compress Vascan-Editor
-  become: false
-  local_action: 
-    module: archive
-    path: '{{ vascan_editor_source_checkout_dir_local }}'
-    dest: '{{ vascan_editor_source_checkout_dir_compressed }}'
-    #remove: yes
-  tags:
-    - editor2
-
-- name: Uncompress Vascan-Editor on remote
-  unarchive:
-    src: '{{ vascan_editor_source_checkout_dir_compressed }}'
-    dest: '{{ vascan_editor_source_root_dir }}'
-  tags:
-    - editor2
-
-- name: Create Vascan-Editor properties file 
-  template:
-    src   : '{{ vascan_editor_config_s }}'
-    dest  : '{{ vascan_editor_source_dir }}/config/editor_installation_cfg.properties'
-  tags:
-    - editor2
-
-- name: Create Vascan-Editor log4j config file 
-  template:
-    src   : 'log4j.properties.j2'
-    dest  : '{{ vascan_editor_source_dir }}/log4j.properties'
-  tags:
-    - editor2
-
-- name: Create Vascan-Editor river files
-  become: true
-  template:
-    src   : elastic_search_river.json.j2
-    dest  : '{{ vascan_editor_source_dir }}/config/create_vascan_{{ item.key }}_river.txt'
-  with_dict: '{{ elastic_search_rivers }}'
-  tags:
-    - editor2
-
-# Vascan-Editor is using Ant as build tool
-- name: Install Apache Ant
-  become: true
-  apt:
-    pkg: maven
-    state: present
-    update_cache    : yes
-  tags:
-    - editor2
-
-- name: Build Vascan-Editor
-  command: ant war
-  args:
-    chdir: '{{ vascan_editor_source_dir }}'
-  tags:
-    - editor2
-
-- name: Copy Vascan-Editor war to tomcat webapps folder
-  copy:
-    src: '{{ vascan_editor_source_dir }}/deploy/vascan-editor.war'
-    dest: '{{ tomcat_webapps }}/vascan-editor.war'
-    remote_src: true
-  notify: restart tomcat
-  tags:
-   - editor2
 
 # - name: Create Vascan config
 #   template:
@@ -290,12 +309,6 @@
 #     - editor
 #     - editor-war
 
-- name: Restart tomcat
-  become: true
-  service:
-    name    : '{{ tomcat }}'
-    state   : restarted
-    
 # Setup cron job to rebuild Vascan Editor database.
 - name: Prepare Vascan Editor Cron directory structure
   become: true
@@ -407,25 +420,26 @@
     - editor-backup
 
 # change config
-- name: Wait for vascan editor config file
-  wait_for:
-    path: '{{ vascan_editor_config_d }}'
-    sleep: 10
-    state: present
-    msg: Timeout to find file installation_cfg.properties for Vascan-Editor
-  register: vascan_editor_config_file
-  ignore_errors: yes
-  tags:
-    - editor
-    - editor-config
+# useless since it's created during a previous process
+#- name: Wait for vascan editor config file
+#  wait_for:
+#    path: '{{ vascan_editor_config_d }}'
+#    sleep: 10
+#    state: present
+#    msg: Timeout to find file installation_cfg.properties for Vascan-Editor
+#  register: vascan_editor_config_file
+#  ignore_errors: yes
+#  tags:
+#    - editor
+#    - editor-config
 
-- name: change config and restart tomcat
-  become: true
-  template:
-    src   : '{{ vascan_editor_config_s }}'
-    dest  : '{{ vascan_editor_config_d }}'
-  when: vascan_editor_config_file  and not vascan_editor_config_file.failed
-  notify: restart tomcat
-  tags:
-    - editor
-    - editor-config
+#- name: change config and restart tomcat
+#  become: true
+#  template:
+#    src   : '{{ vascan_editor_config_s }}'
+#    dest  : '{{ vascan_editor_config_d }}'
+#  when: vascan_editor_config_file  and not vascan_editor_config_file.failed
+#  notify: restart tomcat
+#  tags:
+#    - editor
+#    - editor-config
