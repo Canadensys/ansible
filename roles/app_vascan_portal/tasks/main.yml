@@ -265,6 +265,22 @@
     - portal-directories
 
 # Setup webapp and dependencies
+- name: Install ca-certificates-java on ubuntu 16.04
+  become: true
+  apt:
+    pkg: ca-certificates-java
+    state: present
+  when: ansible_distribution_version == "16.04"
+  tags:
+    - portal
+
+- name: Update ca-certificates
+  become: true
+  shell: update-ca-certificates -f
+  tags:
+    - portal
+    - portal-webapp
+
 - name: Install Maven
   become: true
   apt:
@@ -291,6 +307,7 @@
     dest: '{{ item.value.checkout_dir }}'
     version: '{{ item.value.version }}'
     depth: 1
+    force: yes
   with_dict: '{{ source_dict }}'
   tags:
     - portal
@@ -360,10 +377,60 @@
     - portal
     - portal-elasticsearch
 
-# using curl since posting a file is not supported by the uri module
+## Set vascan as an alias
+- name: Set River timestamps
+  set_fact:
+    timestampsRiver: '{{ ansible_date_time.epoch }}'
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: The River timestamps
+  debug:
+    msg: 'The new River timestamps is {{ timestampsRiver }}'
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Check if vascan exist as alias
+  shell: "curl --silent -XGET 'localhost:9200/_alias/vascan'"
+  args:
+    warn: false
+  register: vascan_aliases
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Clean Vascan aliases
+  shell: "curl -XDELETE 'localhost:9200/{{ item.key }}/_alias/vascan'"
+  with_dict: "{{ vascan_aliases.stdout }}"
+  when: vascan_aliases and 'vascan_' in item.key 
+  tags:
+    - portal
+    - portal-elasticsearch
+
+#- name: Debug vascan
+#  debug:
+#    msg: '{{ item.key }}'
+#  with_dict: "{{ vascan_aliases.stdout }}"
+#  tags:
+#    - portal
+#    - portal-elasticsearch
+
+## Create index
+### using curl since posting a file is not supported by the uri module
 - name: Create ElasticSearch Index
-  shell: 'curl  -XPOST -s "{{ elastic_search.host }}:{{ elastic_search.port }}/vascan" \
+  shell: 'curl  -XPOST -s "{{ elastic_search.host }}:{{ elastic_search.port }}/vascan_{{ timestampsRiver }}" \
                 -d @{{ elastic_search.create_index }}'
+  args:
+    warn: false
+  tags:
+    - portal
+    - portal-elasticsearch
+
+- name: Add vascan as an alias for the current installation
+  shell: >
+    curl -XPOST 'http://{{ elastic_search.host }}:{{ elastic_search.port }}/_aliases' -d '{"actions" : [{ "add" : { "index" : "vascan_{{ timestampsRiver }}", "alias" : "vascan" } }]}'
   args:
     warn: false
   tags:
@@ -416,7 +483,7 @@
   when: es_counts['taxon']|int == 0
   until: current_taxon_count.stdout|int == mysql_taxon_count.stdout|int
   delay: 5
-  retries: 15
+  retries: 25
   ignore_errors: yes
   tags:
     - portal
@@ -430,7 +497,7 @@
     - portal
     - portal-elasticsearch
 
-- name: Restart service elasticsearch, in all cases
+- name: Restart service elasticsearch when count doesn't match
   service:
     name: elasticsearch
     state: restarted
