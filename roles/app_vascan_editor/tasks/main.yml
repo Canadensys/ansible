@@ -11,7 +11,7 @@
   tags:
     - editor
     - editor-directories
-    - editor2
+    - editor-war
 
 # Setup MySQL Database
 - name: Create databases in MySql
