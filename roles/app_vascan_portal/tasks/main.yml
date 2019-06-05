@@ -324,8 +324,8 @@
 
 - name: Create Vascan config
   template:
-     src: vascan-config.properties.j2
-     dest: '{{ source_dict.vascan.checkout_dir }}/config/production/vascan-config.properties'
+    src: vascan-config.properties.j2
+    dest: '{{ source_dict.vascan.checkout_dir }}/config/production/vascan-config.properties'
   tags:
     - portal
     - portal-webapp
