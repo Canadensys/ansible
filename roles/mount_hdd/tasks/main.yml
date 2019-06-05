@@ -42,8 +42,8 @@
 - name: Umount partition
   become: true
   mount:
-    src: '{{ dev_part }}1'
-    path: /ext_data
+    src: '{{ dev_part | default("/dev/vdb") }}1'
+    path: '{{ mount_hdd_dir | default("/ext_data") }}'
     state: absent
   when: erase_hdd
 
@@ -51,7 +51,7 @@
   become: true
   parted:
     label : gpt
-    device: '{{ dev_part }}'
+    device: '{{ dev_part | default("/dev/vdb") }}'
     number: 1
     state : present
   when: erase_hdd
@@ -60,7 +60,7 @@
   become: true
   filesystem:
     fstype: ext4
-    dev: '{{ dev_part }}1'
+    dev: '{{ dev_part | default("/dev/vdb") }}1'
     force: yes
   when: erase_hdd
 
@@ -68,22 +68,22 @@
   become: true
   mount:
     fstype: ext4
-    src: '{{ dev_part }}1'
-    path: /ext_data
+    src: '{{ dev_part | default("/dev/vdb") }}1'
+    path: '{{ mount_hdd_dir | default("/ext_data") }}'
     state: mounted
   when: erase_hdd
 
 - name: Creates directory
   become: true
   file:
-    path  : '/ext_data/data'
+    path  : '{{ mount_hdd_dir_data | default("/ext_data/data") }}'
     state : directory
   when: erase_hdd
 
 - name: Change owner directory
   become: true
   file:
-    path  : /ext_data/data
-    owner : nobody
-    group : nogroup
+    path  : '{{ mount_hdd_dir_data | default("/ext_data/data") }}'
+    owner : '{{ mount_hdd_dir_data_o | default("nobody") }}'
+    group : '{{ mount_hdd_dir_data_g | default("nogroup") }}'
     mode  : 0755
