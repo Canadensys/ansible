@@ -1,0 +1,98 @@
+---
+- name: Update apt cache
+  become: true
+  apt:
+    update_cache: yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  register: update_action
+ 
+- name: Create MT directories
+  become: true
+  file:
+    path  : '{{ mt_images }}'
+    state : directory
+    owner : '{{ mt_user }}'
+    group : '{{ mt_grp }}'
+  tags:
+    - app_mt
+    - app_mt_directories
+
+- name: Create Media Canadensys directories
+  become: true
+  file:
+    path  : '{{ item }}'
+    state : directory
+    owner : '{{ app_user }}'
+    group : '{{ app_grp }}'
+  with_items:
+    - '{{ canadensys_mt }}'
+    - '{{ canadensys_raw }}'
+    - '{{ canadensys_large }}'
+    - '{{ mt_images }}'
+  tags:
+    - app_mt
+    - app_mt_directories
+
+# Images treatment
+- name: Install Images Treatment
+  become: true
+  apt:
+    pkg: '{{ item }}'
+    state: present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  with_items:
+    - 'build-essential'
+    - 'checkinstall'
+    - 'ufraw'
+    - 'imagemagick'
+
+#The MT camera requires at least ufraw 0.19 (otherwise the image is pink)
+#package "ufraw" do
+#  action :install
+#end
+
+- name: Create Scripts directory
+  file:
+    path  : '{{ scripts_directory }}'
+    state : directory
+  tags:
+    - app_mt
+    - app_mt_directories
+
+- name: Convert images bash script
+  become: true
+  template:
+    src: convertImages.sh.j2
+    dest: '{{ scripts_directory }}/convertImages.sh'
+    mode: "0755"
+  tags:
+    - app_mt
+    - app_mt-scripts
+
+- name: Convert images bash script
+  become: true
+  template:
+    src: deleteImages.sh.j2
+    dest: '{{ scripts_directory }}/deleteImages.sh'
+    mode: "0755"
+  tags:
+    - app_mt
+    - app_mt-scripts
+
+# Incron
+- name: Incron image created
+  copy:
+    dest: "/etc/incron.d/on_image_created"
+    content: "{{ mt_images }} IN_CLOSE_WRITE /bin/bash {{ scripts_directory }}/convertImages.sh $@/$# {{ canadensys_mt }}"
+  tags:
+    - app_mt
+    - app_mt-incron
+
+- name: Incron image deleted
+  copy:
+    dest: "/etc/incron.d/on_image_deleted"
+    content: "{{ mt_images }} IN_DELETE /bin/bash {{ scripts_directory }}/deleteImages.sh $@/$# {{ canadensys_mt }}"
+  tags:
+    - app_mt
+    - app_mt-incron

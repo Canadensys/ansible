@@ -1,0 +1,28 @@
+# {{ ansible_managed }}
+
+[global]
+  workgroup       = {{ samba_workgroup | default ('WORKGROUP') }}
+  server string   = {{ samba_server_string | default ('Samba Server') }}
+  security        = {{ samba_security | default ('user') }}
+  interfaces      = {{ samba_interface | default ('lo 127.0.0.1') }}
+  hosts allow     = {{ samba_hosts_allow | default ('192.168.0.') }}
+  load printers   = {{ samba_load_printers | default ('no') }}
+  passdb backend  = {{ samba_passdb_backend | default ('tdbsam') }}
+  dns proxy       = {{ samba_dns_proxy | default ('no') }}
+
+#============================ Share Definitions ==============================
+
+[{{ samba_name | default ('images') }}]
+  comment       = {{ samba_comment | default ('Image Share') }}
+  path          = {{ samba_path | default ('~/') }}
+  guest ok      = {{ samba_gest_ok | default ('no') }}
+  printable     = {{ samba_printable | default ('no') }}
+  writable      = {{ samba_writable | default ('yes') }}
+  valid users   = {{ samba_username | default ('hello') }}
+  create mask   = {{ samba_mask_c | default ('0664') }}
+  directory mask = {{ samba_mask_dir | default ('0775') }}
+  # https://askubuntu.com/a/1066049/940602
+  lanman auth   = {{ samba_lanman_auth | default ('yes') }}
+  ntlm auth     = {{ samba_ntlm_auth | default ('yes') }}
+  # https://www.cyberciti.biz/faq/how-to-configure-samba-to-use-smbv2-and-disable-smbv1-on-linux-or-unix/
+  min protocol  = {{ samba_min_protocol | default ('SMB2') }}

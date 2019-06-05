@@ -1,0 +1,29 @@
+---
+# For more information about default variables see:
+# http://www.ansibleworks.com/docs/playbooks_variables.html#id26
+#
+sftp_users:
+   - username: '{{ user_name }}'
+     name: '{{ user_name }}'
+     # openssl passwd -salt 'somesalt' -1 'secret'
+     password: '$6$jHpEp2AoW.ZH6T$nyuZ3tZOdESqkeidEDlIbEzMPthGEYvVHZC7KzdipF8iSBnswNYjBSIJKHTqiUoGjz.VfrEzvme2Gn4ZqibSS1'
+     authorized_keys: []
+     home: /home
+     group: sftpOnly
+     groups:
+       - staff
+       - www-data
+     mount_points:
+       - { name: '{{ user_name }}', path: '{{ user_home }}' }
+
+
+# list of sftp users
+sftp_users: [user_name]
+# default user group
+sftp_users_group: sftpOnly
+# default user groups
+sftp_users_groups: []
+# users home directory
+sftp_users_home: /home
+# list of user writeable folders
+sftp_users_folders: ['files']

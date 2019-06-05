@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#http://tldp.org/LDP/abs/html/string-manipulation.html
+if [[ $1 == *.CR2 ]]
+  then
+    filepath="$1"
+    ##get filename with extension
+    filename_ext="${filepath##*/}"
+    
+    #get filename without extension
+    filename="${filename_ext%.*}"
+    
+    #symlink to raw
+    rm $2/raw/$filename_ext
+    rm $2/large/$filename.jpg
+fi

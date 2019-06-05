@@ -1,0 +1,35 @@
+---
+# To do before lanching this playbook
+# $ ansible-galaxy install -r roles/roles_requirements.yml
+
+- name: Install Python 2
+  hosts: vm-02
+  become: true
+  gather_facts: False
+
+  vars_files:
+    - '../canadensys-inventories/local_servers/vars_mt.yml'
+  
+  tasks:
+  - name: install python 2
+    raw: sudo bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)"
+
+- name: Install MT sharing files
+  hosts: vm-02
+  become: true
+
+  vars_files:
+    - '../canadensys-inventories/local_servers/vars_common.yml'
+    - '../canadensys-inventories/local_servers/vars_mt.yml'
+  
+  roles:
+    - safe_upgrade
+    - first_install
+    - firewall
+    - fail2ban
+    - log_watcher
+    - incrond
+    - app_mt
+    - samba
+    #- nginx_to_directory
+    - jdauphant.nginx

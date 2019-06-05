@@ -1,0 +1,88 @@
+---
+# samba security
+# https://help.ubuntu.com/lts/serverguide/samba-fileprint-security.html.en
+- name: Install Samba packages
+  become: true
+  apt:
+    pkg             : '{{ item }}'
+    state           : present
+    update_cache    : yes
+    cache_valid_time: '{{ apt_cache_valid_time }}'
+  with_items:
+    - samba
+    - libpam-winbind
+    - apparmor-profiles
+    - apparmor-utils
+  tags:
+    - samba
+    - samba-install
+
+- name: Restart services smbd and nmbd
+  service:
+    name: '{{ item }}'
+    state: restarted
+  with_items:
+    - smbd
+    - nmbd
+  tags:
+    - samba
+    - samba-install
+
+# Need to be done
+# change apparmor config
+# Edit /etc/apparmor.d/usr.sbin.smbd adding information for [share] from the file server example:
+#
+#  /srv/samba/share/ r,
+#  /srv/samba/share/** rwkix,
+#
+#Now place the profile into enforce and reload it:
+#
+#sudo aa-enforce /usr/sbin/smbd
+#cat /etc/apparmor.d/usr.sbin.smbd | sudo apparmor_parser -r
+
+# Samba UFW
+- name: ufw - Allow traffics ssh, http, https
+  become: true
+  ufw:
+    rule    : allow
+    port    : '{{ item.port }}'
+    proto   : '{{ item.proto }}'
+  with_items:
+    - { port: "139" , proto: "tcp" }
+    - { port: "445" , proto: "tcp" }
+    - { port: "137" , proto: "udp" }
+    - { port: "138" , proto: "udp" }
+  notify:
+    - restart ufw
+  tags:
+    - samba
+    - samba-ufw
+
+- name: Nginx copy configuration
+  become: true
+  template:
+    src     : ./templates/smb.conf.j2
+    dest    : /etc/samba/smb.conf
+    backup  : yes
+  tags:
+    - samba
+    - samba-conf
+    
+- name: Delete Samba user
+  shell: >
+    smbpasswd -x {{ samba_username }}
+  tags:
+    - samba
+    - samba-user
+
+
+- name: Create Samba user
+  shell: >
+    (pdbedit --user={{ samba_username }} 2>&1 > /dev/null) \
+    || (echo {{ samba_password }}; echo {{ samba_password }}) \
+    | smbpasswd -s -a {{ samba_username }}
+  no_log: true
+  tags:
+    - samba
+    - samba-user
+

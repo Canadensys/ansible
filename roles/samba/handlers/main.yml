@@ -1,0 +1,24 @@
+---
+- name: restart ssh
+  become: true
+  service:
+    name    : '{{ ssh }}'
+    state   : restarted
+
+- name: restart smbd
+  become: true
+  service:
+    name    : smbd
+    state   : restarted
+
+- name: restart nmbd
+  become: true
+  service:
+    name    : nmbd
+    state   : restarted
+
+- name: restart ufw
+  become: true
+  service:
+    name    : '{{ ufw }}'
+    state   : restarted
