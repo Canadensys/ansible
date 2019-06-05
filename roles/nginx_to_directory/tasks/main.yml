@@ -1,6 +1,6 @@
 ---
 # Nginx
-- name: Nginx copy template from nginx to tomcat8
+- name: Nginx copy template from nginx to directory
   become: true
   template:
     src     : ./templates/nginx_to_directory.j2
