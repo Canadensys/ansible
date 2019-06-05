@@ -1,30 +1,53 @@
 ---
+- name: Remove user if user_remove is true
+  become: true
+  user:
+    name    : '{{ user_name | default("name") }}'
+    state   : absent
+    remove  : yes
+    force   : yes
+  when: user_remove
+  tags:
+    - user
+    
 - name : create group user
   become: true
   group:
-    name: '{{ user_group }}'
+    name: '{{ user_group | default("name") }}'
+  tags:
+    - user
     
 - name: Add default user
   become: true
   user:
-    name    : '{{ user_name }}'
-    group   : '{{ user_group }}'
+    name    : '{{ user_name | default("name") }}'
+    group   : '{{ user_group | default("name") }}'
+    create_home: '{{ user_c_home | default("yes") }}'
     shell   : '/bin/false'
     state   : present
+  tags:
+    - user
+    
 
 - name: Set user home if defined
   become: true
   user:
-    name    : '{{ user_name }}'
-    home    : '{{ user_home }}'
+    name    : '{{ user_name | default("name") }}'
+    home    : '{{ user_home | default("/home/name/") }}'
   when: (user_home is defined)
+  tags:
+    - user
+    
 
 - name: Set user password if defined
   become: true
   user:
-    name    : '{{ user_name }}'
-    password: '{{ user_password }}'
+    name    : '{{ user_name | default("name") }}'
+    password: '{{ user_password | default("name_password") }}'
   when: (user_password is defined)
+  tags:
+    - user
+    
 
 - name: Add .ssh directory for user with home
   become: true
@@ -32,10 +55,14 @@
     path    : '{{ item }}'
     state   : directory
     owner   : '{{ user_name }}'
-    group   : '{{ user_group }}'
+    group   : '{{ user_group | default(grp) }}'
   with_items:
-    - '{{ user_home }}/.ssh/'
-    - '{{ user_web }}'
+    - '{{ user_home | default("/home/name/") }}/.ssh'
+    - '{{ user_web | default("/home/name/") }}'
+  when: (user_home is defined)
+  tags:
+    - user
+    
 
 #- name: Add public key for user
 #  command: echo '{{ user_pub_key }}' | tee ~/.ssh/authorized_keys
